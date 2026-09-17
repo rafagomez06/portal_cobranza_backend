@@ -1,0 +1,33 @@
+# Entorno virtual 
+venv/
+env/
+.venv/
+
+# Variables de entorno (NUNCA subir al repo)
+.env
+
+# Python  
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Imágenes subidas por usuarios 
+uploads/
+
+# Logs  ─
+logs/
+*.log
+
+# IDEs  ─
+.vscode/
+.idea/
+*.swp
+
+# macOS  
+.DS_Store
+
+#Tests  
+.pytest_cache/
+htmlcov/
+.coverage
