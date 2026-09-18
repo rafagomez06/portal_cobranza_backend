@@ -34,7 +34,6 @@ class Env:
         # Logs
         self.route_log = os.getenv(f"{self.prefix}LOG_FILE_ROUTE", "logs/")
 
-
 class EnvSingleton:
     """
     Patrón Singleton: garantiza una sola instancia de Env en toda la app.

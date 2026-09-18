@@ -61,30 +61,32 @@ def create_app(env: str = "default") -> Flask:
     jwt.init_app(app)
     bcrypt.init_app(app)
     limiter.init_app(app)
+    
 
     # CORS(app, origins=["http://localhost:3000"])   # Consumo de Front en desarrollo
     CORS(app, origins="*")  # Permitir todos
-    URL_PREFIX = '/api/v1'
+    URL_PREFIX = '/api/v1/sic'
 
     # Registrar Rutas de entrada 
-    from app.controllers.UsuariosController import UsuariosController
-    from app.controllers.ChecadorController import ChecadorController
+    from app.controllers.CatalogosController import CatalogosController
+    from app.controllers.PagosController import PagosController
 
     # Rutas Endpoints
-    app.register_blueprint(UsuariosController, url_prefix=f"{URL_PREFIX}/auth")
-    app.register_blueprint(ChecadorController, url_prefix=f"{URL_PREFIX}/checador")
+    # app.register_blueprint(UsuariosController, url_prefix=f"{URL_PREFIX}/auth")
+    app.register_blueprint(CatalogosController, url_prefix=f"{URL_PREFIX}/catalogo")
+    app.register_blueprint(PagosController, url_prefix=f"{URL_PREFIX}/pago")
 
 
     # Manejadores de errores globales 
     _register_error_handlers(app)
 
     # HEALT CHECK ENDPOINT
-    @app.route('/api/v1/health', methods=['GET'])
+    @app.route('/api/v1/sic/health', methods=['GET'])
     @limiter.limit("5 per minute")
     def health_check():
         return jsonify({
             "status": "healthy",
-            "service": "Sistema Integral Cobranza API",
+            "service": "Sistema Integral Cobranza(SIC) - API",
             "version": "1.0.0",
             "mensaje": "Funcionando OK",
             "timestamp": datetime.now().isoformat()

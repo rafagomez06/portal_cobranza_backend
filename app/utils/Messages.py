@@ -5,6 +5,7 @@ MENSAJE = 'Mensaje'
 LOGIN_FAILED = 'login_failed'
 
 UPLOAD_FOLDER = 'static/uploads/'
+UPLOAD_FOLDER_2 = r"\\192.168.11.211\Archivadoc\Cobranza\001_PRIMOS_AND_COUSINS\comprobantes_pago_clientes"
 
 # Mensajes validaciones
 ADMIN_EXISTENTE = 'Este usuario Administrador ya existe, intenta con otro.'
@@ -15,6 +16,7 @@ PASSWORD_CORTO = 'La contraseña debe tener al menos 6 caracteres.'
 USER_CORTO = 'El Nombre de usuario debe tener más de 3 caracteres.'
 CAMPOS_REQUERIDOS = 'Faltan campos por ingresar.'
 
+FILE_ERROR = 'Extensión del archivo no permitida. Revise e intente nuevamente.'
 IMAGEN_EMPTY = 'No se ha seleccionado ningún archivo de imagen.'
 IMAGEN_ERROR = 'Archivo inválido. Asegúrate de subir una imagen real (JPG, PNG, WEBP).'
 ERROR_GET = 'Error al consultar la información.'

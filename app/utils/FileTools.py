@@ -1,12 +1,12 @@
 import os
 import uuid
 from PIL import Image
-
+from dotenv import load_dotenv
 from app.utils.Logger import logger
 
 LOG = logger()
 
-ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
+ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'pdf'}
 MAX_IMAGE_SIZE     = (1200, 1200)   # píxeles máximos al redimensionar
 
 
@@ -17,7 +17,7 @@ class FileTools:
         return os.path.exists(os.path.join(ruta, nombre))
 
     @staticmethod
-    def elimina_archivo(ruta: str, nombre: str) -> bool:
+    def elimina_archivo_ruta_nombre(ruta: str, nombre: str) -> bool:
         """
         Elimina un archivo si existe.
         Retorna True si lo eliminó, False si no existía.
@@ -30,6 +30,19 @@ class FileTools:
         LOG.warning(f"Archivo no encontrado para eliminar: {ruta_completa}")
         return False
 
+    @staticmethod
+    def elimina_archivo_ruta(ruta: str) -> bool:
+        """
+        Elimina un archivo si existe.
+        Retorna True si lo eliminó, False si no existía.
+        """
+        if os.path.exists(ruta):
+            os.remove(ruta)
+            LOG.info(f"Archivo eliminado: {ruta}")
+            return True
+        LOG.warning(f"Archivo no encontrado para eliminar: {ruta}")
+        return False
+    
     @staticmethod
     def extension_permitida(nombre_archivo: str) -> bool:
         """Valida que la extensión del archivo esté en la lista permitida."""
@@ -91,8 +104,28 @@ class FileTools:
         if not FileTools.validar_es_imagen(ruta_completa):
             os.remove(ruta_completa)
             return None
-
         FileTools.redimensionar_imagen(ruta_completa)
-
         LOG.info(f"Imagen guardada: {ruta_completa}")
         return nombre_unico
+
+    @staticmethod
+    def guardar_archivo_cobranza(archivo) -> str | None:
+        #valida extension de archivo
+        if not FileTools.extension_permitida(archivo.filename):
+            LOG.warning(f"Extensión no permitida: {archivo.filename}")
+            return None
+        
+        # Obtenemos la ruta de variable de entorno
+        server_destino = os.getenv("IP_SERVER_FILE")
+        carpeta_destino = os.getenv("UPLOAD_FOLDER")
+        ruta_destino = os.path.join(server_destino, carpeta_destino)
+
+        nombre_unico  = FileTools.generar_nombre_unico(archivo.filename)
+        ruta_completa = os.path.join(ruta_destino, nombre_unico)
+
+        os.makedirs(carpeta_destino, exist_ok=True)
+        archivo.save(ruta_completa)
+
+        LOG.info(f"Archivo guardado: {ruta_completa}")
+
+        return ruta_completa

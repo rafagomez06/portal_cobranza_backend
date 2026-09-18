@@ -6,25 +6,26 @@ from sqlalchemy import insert, text
 LOG = logger()
 sql_connection = ConnectionDb.alchemy_db
 
-## Modelos de tablas de catalogos
+## Consumos a SQL de Pagos
+class PagosModel(sql_connection.Model):
+    __tablename__ = 'PagosModel'
 
-class UsuariosModel(sql_connection.Model):
-    __tablename__ = 'UsuariosModel'
-
-    id_UsuariosModel = sql_connection.Column(sql_connection.Integer, primary_key=True)
+    id_PagosModel = sql_connection.Column(sql_connection.Integer, primary_key=True)
     nombre = sql_connection.Column(sql_connection.String(100), nullable=False)
 
-    def __init__(self, id_UsuariosModel, nombre=None) -> None:
-        self.id_UsuariosModel = id_UsuariosModel
+    def __init__(self, id_PagosModel, nombre=None) -> None:
+        self.id_PagosModel = id_PagosModel
         self.nombre = nombre
 
     @staticmethod
-    def obtener_usuarios():
-        sql = text(f"EXEC sp_ObtenerListadoUsuariosChecadorApp;")
+    def obtener_facturas(cod_cliente):
+        sql = text(f"EXEC sp_ObtenerFacturasCliente_SIC @CodCliente='{cod_cliente}';")
         LOG.info(f"## Consulta: {sql}")
         result = sql_connection.session.execute(sql)
         return result
+
     
+    #############################################################
     @staticmethod
     def validar_login(usuario,password_hash):
         sql = text(f"EXEC sp_ValidarUsuariosChecador @UsuarioChecador='{usuario}',@Password='{password_hash}';")
