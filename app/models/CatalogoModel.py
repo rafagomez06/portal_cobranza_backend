@@ -20,7 +20,7 @@ class CatalogoModel(sql_connection.Model):
 
     @staticmethod
     def obtener_tipos_facturas():
-        sql = text(f"EXEC sp_ObtenerCatalogoTiposFacturas;")
+        sql = text(f"EXEC sp_ObtenerCatalogoTiposFacturas_SIC;")
         LOG.info(f"## Consulta: {sql}")
         result = sql_connection.session.execute(sql)
         return result
