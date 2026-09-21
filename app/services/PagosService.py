@@ -1,5 +1,6 @@
 from app.models.PagosModel import PagosModel
 from flask_jwt_extended import create_access_token
+from app.utils.FormateoData import formato_moneda
 from app.utils.response import api_response
 from app.utils.RaiseException import UnexpectedError
 from app.utils.Logger import logger
@@ -21,7 +22,6 @@ class PagosService:
     @staticmethod
     def registrar_pago(data,files):
         try:
-            LOG.info("## registrar_pago ##")
             # Obtenemos valores 
             cod_cliente = data.get("cod_cliente")
             nom_cliente = data.get("nom_cliente")
@@ -29,9 +29,12 @@ class PagosService:
 
             # Guardamos ruta del archivo
             ruta_archivo = FileTools.guardar_archivo_cobranza(comprobante_file)
+
+
+            print("RUTA RETORNADA: ", ruta_archivo)
             # Si no retorna información, falló extensión
             if not ruta_archivo:
-                return api_response(STATUS_CODE_400,None,ERROR,FILE_ERROR)
+                return api_response(STATUS_CODE_400,[],ERROR,FILE_ERROR)
 
 
             
@@ -83,22 +86,40 @@ class PagosService:
             df_result = pd.DataFrame(rows, columns=columns)
             # Obtenemos registros de fechas para formatear como 'YYYY-MM-DD'
             df_result["fecha"] = pd.to_datetime(df_result["fecha"])
-            df_result["fecha_vence"] = pd.to_datetime(df_result["fecha_vence"])
+            df_result["fecha_vencimiento"] = pd.to_datetime(df_result["fecha_vencimiento"])
+            df_result["importe_factura"] = df_result["importe_factura"].apply(formato_moneda)
+
 
             # Formateo fechas
             df_result["fecha"] = df_result["fecha"].dt.strftime("%Y-%m-%d")
-            df_result["fecha_vence"] = df_result["fecha_vence"].dt.strftime("%Y-%m-%d")
+            df_result["fecha_vencimiento"] = df_result["fecha_vencimiento"].dt.strftime("%Y-%m-%d")
+
+
+
+
 
             total_registros = len(df_result) 
 
-            # Limpiar t_body antes de asignar nuevos valores
+            # Limpiar variables antes de asignar nuevos valores
             t_body = []
+            t_head = []
+
+            t_head = [
+                {"dataIndex": col, "key": col, "title": col.replace("_", " ").capitalize()}
+                for col in columns
+            ]
 
             # Convertimos las filas de datos en una lista de diccionarios
             t_body = df_result.to_dict(orient="records")
+
             msj = f"{total_registros} Facturas(s) encontrada(s)"
-            
-            return api_response(STATUS_CODE_200,t_body,SUCCESS,msj)
+
+            # resultado
+            data = {
+                "t_header":t_head,
+                "t_body":t_body
+            }
+            return api_response(STATUS_CODE_200,data,SUCCESS,msj)
 
         except exc.StatementError as sta_err:
             error_trace = traceback.format_exc()

@@ -118,7 +118,9 @@ class FileTools:
         # Obtenemos la ruta de variable de entorno
         server_destino = os.getenv("IP_SERVER_FILE")
         carpeta_destino = os.getenv("UPLOAD_FOLDER")
-        ruta_destino = os.path.join(server_destino, carpeta_destino)
+        ruta_destino = (f"{server_destino}{carpeta_destino}")
+        #ruta_destino = os.path.join(server_destino, carpeta_destino)
+        print("## RUTA DESTINO: ", ruta_destino)
 
         nombre_unico  = FileTools.generar_nombre_unico(archivo.filename)
         ruta_completa = os.path.join(ruta_destino, nombre_unico)
