@@ -22,21 +22,16 @@ class UsuariosService:
         try:
             LOG.info("## registrar_usuario ##")
             # Obtenemos valores 
-            id_empleado = data["id_empleado"]
-            id_empresa = data["id_empresa"]
-            usuario_checador = data["usuario_checador"].strip()
-            nombre = data["nombre"].strip()
-            apellido_paterno = data["apellido_paterno"].strip()
-            apellido_materno = data["apellido_materno"].strip()
+            cod_cliente = data["cod_cliente"].strip()
+            nom_cliente = data["nom_cliente"].strip()
+            rfc_cte = data["rfc_cte"].strip()
+            moneda = data["moneda"].strip()
             correo = data["correo"].strip()
-            usuario_creacion = data["usuario_creacion"].strip()
 
-            #password_hash = set_password(password)
             #Envio de datos
-            registrar_result = UsuariosModel.registrar_usuario(id_empleado,
-                                                            id_empresa,usuario_checador,nombre
-                                                            ,apellido_paterno
-                                                            ,apellido_materno,correo,usuario_creacion)
+            registrar_result = UsuariosModel.registrar_usuario(cod_cliente,
+                                                            nom_cliente,rfc_cte,moneda
+                                                            ,correo)
 
             # Convertimos valores obtenidos
             columns = registrar_result.keys()
@@ -83,28 +78,29 @@ class UsuariosService:
             LOG.info("## validar_login ##")
 
             # Obtenemos valores 
-            usuario = data["usuario"].strip()
+            cod_cliente = data["cod_cliente"].strip()
+            correo = data["correo"].strip()
             password = data["password"]
 
             #Consultamos usuario y validamos
-            result_obtener = UsuariosService.obtener_usuario_login(usuario)
+            result_obtener = UsuariosService.obtener_cliente_login(cod_cliente)
             estatus_result = result_obtener["estatus"]
             mensaje_result = result_obtener["mensaje"]
             password_hash_result = result_obtener["password_hash"]
 
             if estatus_result != STATUS_CODE_200:
-                LOG.info(f"{mensaje_result}: {usuario}")
+                LOG.info(f"{mensaje_result}: {cod_cliente}")
                 return api_response(STATUS_CODE_401,{},LOGIN_FAILED,mensaje_result)
 
             #Valida si pass es correcto
             es_pass_valido = check_password(password_hash_result, password)
 
             if not es_pass_valido:
-                LOG.info(f"Contraseña incorrecta para el usuario: {usuario}")
+                LOG.info(f"Contraseña incorrecta para el cliente: {cod_cliente}")
                 return api_response(STATUS_CODE_401,{},LOGIN_FAILED,CREDENCIALES_FALLIDAS)
             
             #Validamos login
-            valida_result = UsuariosModel.validar_login(usuario,password_hash_result)
+            valida_result = UsuariosModel.validar_login(cod_cliente,correo,password_hash_result)
 
             # Convertimos valores obtenidos
             columns = valida_result.keys()
@@ -117,46 +113,31 @@ class UsuariosService:
             primer_elemento_sql = json_data[0]
             estadoSQL = primer_elemento_sql.get('estatus')
             mensajeSQL = primer_elemento_sql.get('mensaje')
-            nombre_usuarioSQL = primer_elemento_sql.get('nombre_usuario')
-            correo_usuarioSQL = primer_elemento_sql.get('correo')
-            id_empleadoSQL = primer_elemento_sql.get('id_empleado')
-
-            #Obtenemos datos jornada
-            dia_semanaSQL = primer_elemento_sql.get('dia_semana')
-            clave_turnoSQL = primer_elemento_sql.get('clave_turno')
-            festivoSQL = primer_elemento_sql.get("festivo")
-            es_laboralSQL = primer_elemento_sql.get("es_laboral")
-            hora_inicioSQL = primer_elemento_sql.get('hora_inicio')
-            hora_finSQL = primer_elemento_sql.get('hora_fin')
-
+            cod_clienteSQL = primer_elemento_sql.get('cod_cliente')
+            nom_clienteSQL = primer_elemento_sql.get('nom_cliente')
+            correo_clienteSQL = primer_elemento_sql.get('correo')
+            id_clienteSQL = primer_elemento_sql.get('id_cliente')
 
             # si SP falla se retorna su respuesta
             if estadoSQL != STATUS_CODE_200:
                 LOG.info(f"Error: {mensajeSQL} ")
                 # ConnectionDb.alchemy_db.session.rollback()
                 return api_response(STATUS_CODE_400,{},LOGIN_FAILED,mensajeSQL)
-            
+
+            cliente_key = (cod_clienteSQL + correo_clienteSQL+password_hash_result)
             # Generamos token unico
-            token = create_access_token(identity=str(usuario))
+            token = create_access_token(identity=str(cliente_key))
 
             t_body = []
 
             # Convertimos las filas de datos en una lista de diccionarios
             t_body = {
                     "token": token,
-                    "nombre_usuario":nombre_usuarioSQL,
-                    "correo_usuario":correo_usuarioSQL,
-                    "id_empleado":id_empleadoSQL,
-                    "usuario": usuario,
-                    "jornada":{
-                            "dia_semana": dia_semanaSQL,
-                            "clave_turno": clave_turnoSQL,
-                            "festivo": festivoSQL,
-                            "es_laboral": es_laboralSQL,
-                            "hora_inicio": hora_inicioSQL,
-                            "hora_fin": hora_finSQL,
-                        }
-                        }
+                    "cod_cliente":cod_clienteSQL,
+                    "nom_cliente":nom_clienteSQL,
+                    "correo_cliente":correo_clienteSQL,
+                    "id_cliente":id_clienteSQL
+                    }
 
             #Commit y Retorno de datos
             # return api_response(STATUS_CODE_200,json_data,SUCCESS,mensajeSQL)
@@ -178,14 +159,14 @@ class UsuariosService:
             LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
             raise UnexpectedError("Ocurrió un error inesperado - validar_login")       
 
-    # Obtiene la pass de usuario hasheada (encriptada)
+    # Obtiene la pass de cliente hasheada (encriptada)
     @staticmethod
-    def obtener_usuario_login(usuario):
+    def obtener_cliente_login(cliente):
         try:
-            LOG.info("## obtener_usuario_login ##")
+            LOG.info("## obtener_cliente_login ##")
 
             # Obtenemos valores 
-            result = UsuariosModel.obtener_usuario_login(usuario)
+            result = UsuariosModel.obtener_cliente_login(cliente)
 
             # Convertimos valores obtenidos
             columns = result.keys()
@@ -209,18 +190,18 @@ class UsuariosService:
         except exc.StatementError as sta_err:
             error_trace = traceback.format_exc()
             LOG.error(
-                f"Err al realizar la sentencia en validar_login:{str(sta_err)} [{error_trace}]")
-            raise DatabaseError("Err al realizar la sentencia SQL - validar_login")
+                f"Err al realizar la sentencia en obtener_cliente_login:{str(sta_err)} [{error_trace}]")
+            raise DatabaseError("Err al realizar la sentencia SQL - obtener_cliente_login")
         except exc.SQLAlchemyError as e: 
-            LOG.error(f"DB error en validar_login: {str(e)}")
-            raise DatabaseError("Error al consultar la base de datos - validar_login")
+            LOG.error(f"DB error en obtener_cliente_login: {str(e)}")
+            raise DatabaseError("Error al consultar la base de datos - obtener_cliente_login")
         except ValueError as e: 
             LOG.warning(f"Parámetro inválido: {str(e)}")
-            raise UnexpectedError("Parámetros de búsqueda inválidos - validar_login")
+            raise UnexpectedError("Parámetros de búsqueda inválidos - obtener_cliente_login")
         except Exception as e:  
             error_trace = traceback.format_exc()
             LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
-            raise UnexpectedError("Ocurrió un error inesperado - validar_login")      
+            raise UnexpectedError("Ocurrió un error inesperado - obtener_cliente_login")      
     
     # Actualizar Pass de usuario
     @staticmethod
@@ -228,13 +209,16 @@ class UsuariosService:
         try:
             LOG.info("## actualizar_password ##")
             # Obtenemos valores 
-            usuario = data["usuario"].strip()
+            cod_cliente = data["cod_cliente"].strip()
+            correo = data["correo_cliente"].strip()
+            anterior_password = data["anterior_password"]
             nueva_password = data["nueva_password"]
-
+            
+            #Hash a nva password
             password_hash = set_password(nueva_password)
 
             #Envio de datos
-            actualizar_result = UsuariosModel.actualizar_password(usuario,password_hash)
+            actualizar_result = UsuariosModel.actualizar_password(cod_cliente,correo,anterior_password,password_hash)
 
             # Convertimos valores obtenidos
             columns = actualizar_result.keys()

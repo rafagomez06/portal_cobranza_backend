@@ -65,14 +65,15 @@ def create_app(env: str = "default") -> Flask:
 
     # CORS(app, origins=["http://localhost:3000"])   # Consumo de Front en desarrollo
     CORS(app, origins="*")  # Permitir todos
-    URL_PREFIX = '/api/v1/sic'
+    URL_PREFIX = '/api/v1/sic' # Sistema Integral Cobranza
 
     # Registrar Rutas de entrada 
     from app.controllers.CatalogosController import CatalogosController
+    from app.controllers.UsuariosController import UsuariosController
     from app.controllers.PagosController import PagosController
 
     # Rutas Endpoints
-    # app.register_blueprint(UsuariosController, url_prefix=f"{URL_PREFIX}/auth")
+    app.register_blueprint(UsuariosController, url_prefix=f"{URL_PREFIX}/auth")
     app.register_blueprint(CatalogosController, url_prefix=f"{URL_PREFIX}/catalogo")
     app.register_blueprint(PagosController, url_prefix=f"{URL_PREFIX}/pago")
 

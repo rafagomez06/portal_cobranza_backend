@@ -26,15 +26,16 @@ class UsuariosModel(sql_connection.Model):
         return result
     
     @staticmethod
-    def validar_login(usuario,password_hash):
-        sql = text(f"EXEC sp_ValidarUsuariosChecador @UsuarioChecador='{usuario}',@Password='{password_hash}';")
+    def validar_login(cliente,correo,password_hash):
+        sql = text(f"EXEC sp_ValidarClientes_SIC @CodCliente='{cliente}',@Correo='{correo}',@Password='{password_hash}';")
         LOG.info(f"## Consulta: {sql}")
         result = sql_connection.session.execute(sql)
         return result
     
     @staticmethod
-    def actualizar_password(usuario,password_hash):
-        sql = text(f"EXEC sp_ActualizarPasswordUsuario @UsuarioChecador='{usuario}',@Password='{password_hash}';")
+    def actualizar_password(cod_cliente,correo,anterior_password,password_hash):
+        sql = text(f"EXEC sp_ActualizarPasswordCliente_SIC @CodCliente='{cod_cliente}',@Correo='{correo}',"
+                    f"@AnteriorPassword={anterior_password},@NuevaPassword='{password_hash}';")
         LOG.info(f"## Consulta: {sql}")
         result = sql_connection.session.execute(sql)
         return result
@@ -47,19 +48,17 @@ class UsuariosModel(sql_connection.Model):
         return result
     
     @staticmethod
-    def obtener_usuario_login(usuario):
-        sql = text(f"EXEC sp_ObtenerUsuarioLogin @UsuarioChecador='{usuario}';")
+    def obtener_cliente_login(cliente):
+        sql = text(f"EXEC sp_ObtenerClienteLogin_SIC @CodCliente='{cliente}';")
         LOG.info(f"## Consulta: {sql}")
         result = sql_connection.session.execute(sql)
         return result
     
     @staticmethod
-    def registrar_usuario(id_empleado, id_empresa,usuario_checador,nombre,apellido_paterno,apellido_materno,correo,usuario_creacion):
-        sql = text(f"EXEC sp_RegistrarUsuarioChecadorApp @IdEmpleado={id_empleado},@IdEmpresa={id_empresa},"
-                f"@UsuarioChecador='{usuario_checador}',@NombreUsuario='{nombre}',@ApellidoPaterno='{apellido_paterno}',"
-                f"@ApellidoMaterno='{apellido_materno}',@Correo='{correo}',@UsuarioCreacion='{usuario_creacion}';")
+    def registrar_usuario(cod_cliente, nom_cliente,rfc_cte,moneda,correo):
+        sql = text(f"EXEC sp_RegistrarCliente_SIC @CodCliente='{cod_cliente}',@NomCliente='{nom_cliente}',"
+                f"@RfcCliente='{rfc_cte}',@Moneda='{moneda}',@CorreoCliente='{correo}';")
         LOG.info(f"## Consulta: {sql}")
-
         result = sql_connection.session.execute(sql)
         return result
     
