@@ -76,7 +76,7 @@ class UsuariosService:
     def validar_login(data):
         try:
             LOG.info("## validar_login ##")
-
+            print(data)
             # Obtenemos valores 
             cod_cliente = data["cod_cliente"].strip()
             correo = data["correo"].strip()
@@ -140,8 +140,7 @@ class UsuariosService:
                     }
 
             #Commit y Retorno de datos
-            # return api_response(STATUS_CODE_200,json_data,SUCCESS,mensajeSQL)
-            return api_response(STATUS_CODE_200,t_body ,SUCCESS,LOGIN_SUCCESS)
+            return api_response(STATUS_CODE_200,t_body ,SUCCESS,mensajeSQL)
 
         except exc.StatementError as sta_err:
             error_trace = traceback.format_exc()
@@ -213,7 +212,24 @@ class UsuariosService:
             correo = data["correo_cliente"].strip()
             anterior_password = data["anterior_password"]
             nueva_password = data["nueva_password"]
-            
+
+            #Consultamos usuario y validamos
+            result_obtener = UsuariosService.obtener_cliente_login(cod_cliente)
+            estatus_result = result_obtener["estatus"]
+            mensaje_result = result_obtener["mensaje"]
+            password_hash_result = result_obtener["password_hash"]
+
+            if estatus_result != STATUS_CODE_200:
+                LOG.info(f"{mensaje_result}: {cod_cliente}")
+                return api_response(STATUS_CODE_401,{},LOGIN_FAILED,mensaje_result)
+
+            #Valida si pass es correcto
+            es_pass_valido = check_password(password_hash_result, anterior_password)
+
+            if not es_pass_valido:
+                LOG.info(f"Contraseña incorrecta para el cliente: {cod_cliente}")
+                return api_response(STATUS_CODE_401,{},LOGIN_FAILED,CREDENCIALES_FALLIDAS)
+
             #Hash a nva password
             password_hash = set_password(nueva_password)
 
@@ -259,9 +275,9 @@ class UsuariosService:
             raise UnexpectedError("Ocurrió un error inesperado - actualizar_password")   
 
 
-    # Actualizar Permiso a uso de la app
+    # Actualizar Permiso de acceso a sistema
     @staticmethod
-    def actualizar_permiso_app(data):
+    def actualizar_permiso_sic(data):
         try:
             LOG.info("## actualizar_permiso_app ##")
             # Obtenemos valores 

@@ -14,7 +14,7 @@ PagosController  = Blueprint("pagos", __name__)
 
 
 @PagosController.route("/registrar-pago", methods=["POST"])
-# @jwt_required()
+@jwt_required()
 def registrar_pago():
     LOG.info("## registrar_pago ##")
     data = request.form
@@ -32,24 +32,8 @@ def registrar_pago():
     return PagosService.registrar_pago(data, files)
 
 @PagosController.route("/listado-facturas", methods=["GET"])
-# @jwt_required()
-#@limiter.limit("10 per minute")
+@jwt_required()
 def listado_facturas():
     data = request.args.to_dict()
-    print("DATA ",data)
     return PagosService.listado_facturas(data)
-
-
-
-# @PagosController.route("/actualizar-password", methods=["PUT"])
-# @jwt_required()
-# def actualizar_password():
-#     data = request.get_json()
-#     return UsuariosService.actualizar_password(data)
-
-# @PagosController.route("/actualizar-permiso-app", methods=["PUT"])
-# def actualizar_permiso_app():
-#     data = request.get_json()
-#     return UsuariosService.actualizar_permiso_app(data)
-
 

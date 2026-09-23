@@ -41,7 +41,7 @@ class UsuariosModel(sql_connection.Model):
         return result
 
     @staticmethod
-    def actualizar_permiso_app(usuario,flag_permiso):
+    def actualizar_permiso_sic(usuario,flag_permiso): ###PENDIENTE MODIFICAR
         sql = text(f"EXEC sp_ActualizarPermisoAPP @UsuarioChecador='{usuario}',@FlagPermiso={flag_permiso};")
         LOG.info(f"## Consulta: {sql}")
         result = sql_connection.session.execute(sql)

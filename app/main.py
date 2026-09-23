@@ -24,7 +24,7 @@ bcrypt = Bcrypt()
 
 limiter = Limiter(
     key_func=get_limiter_key,
-    default_limits=["200 per day", "50 per hour"],
+    default_limits=["200 per day", "50 per hour"],#50
     storage_uri="memory://" # En producción cambia a Redis: "redis://localhost:6379"
 )
 # Mensaje Personalizado retorno token expirado
@@ -63,8 +63,22 @@ def create_app(env: str = "default") -> Flask:
     limiter.init_app(app)
     
 
-    # CORS(app, origins=["http://localhost:3000"])   # Consumo de Front en desarrollo
-    CORS(app, origins="*")  # Permitir todos
+    CORS(
+        app,
+        resources={
+            r"/api/v1/sic/*": {
+                "origins": [
+                    "http://localhost:5173",
+                    "http://127.0.0.1:5173",
+                ],
+                "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+                "allow_headers": ["Content-Type", "Authorization"],
+                "expose_headers": ["Content-Type"],
+                "supports_credentials": True,
+                "max_age": 3600,
+            }
+        },
+    )
     URL_PREFIX = '/api/v1/sic' # Sistema Integral Cobranza
 
     # Registrar Rutas de entrada 

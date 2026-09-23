@@ -18,6 +18,7 @@ def validar_login():
     return UsuariosService.validar_login(data)
 
 @UsuariosController.route("/registrar-usuario", methods=["POST"])
+@jwt_required()
 def registrar_usuario():
     data = request.get_json()
     return UsuariosService.registrar_usuario(data)
@@ -28,13 +29,14 @@ def actualizar_password():
     data = request.get_json()
     return UsuariosService.actualizar_password(data)
 
-@UsuariosController.route("/actualizar-permiso-app", methods=["PUT"])
-def actualizar_permiso_app():
+@UsuariosController.route("/actualizar-permiso-sic", methods=["PUT"])
+@jwt_required()
+def actualizar_permiso_sic():
     data = request.get_json()
-    return UsuariosService.actualizar_permiso_app(data)
+    return UsuariosService.actualizar_permiso_sic(data)
 
 @UsuariosController.route("/listado-usuarios", methods=["GET"])
-# @jwt_required()
+@jwt_required()
 @limiter.limit("10 per minute")
 def listado_usuarios():
     data = request.args.to_dict()
