@@ -2,7 +2,7 @@ import os
 from app.models.UsuariosModel import UsuariosModel
 from app.services.CorreoService import CorreoService
 from flask import request
-from flask_jwt_extended import create_access_token,decode_token, get_jwt_identity
+from flask_jwt_extended import create_access_token,decode_token
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from datetime import timedelta
 from app.utils.response import api_response
@@ -15,7 +15,6 @@ from app.utils.RaiseException import ( DatabaseError,  UnexpectedError)
 from app.utils.Messages import *
 from app.utils.PassConvert import set_password,check_password
 from app.main import ConnectionDb
-
 from sqlalchemy import exc
 
 LOG = logger()
@@ -120,7 +119,7 @@ class UsuariosService:
             cod_clienteSQL = primer_elemento_sql.get('cod_cliente')
             nom_clienteSQL = primer_elemento_sql.get('nom_cliente')
             correo_clienteSQL = primer_elemento_sql.get('correo')
-            id_clienteSQL = primer_elemento_sql.get('id_cliente')
+            moneda_cliente = primer_elemento_sql.get('moneda')
 
             # si SP falla se retorna su respuesta
             if estadoSQL != STATUS_CODE_200:
@@ -140,7 +139,7 @@ class UsuariosService:
                     "cod_cliente":cod_clienteSQL,
                     "nom_cliente":nom_clienteSQL,
                     "correo_cliente":correo_clienteSQL,
-                    "id_cliente":id_clienteSQL
+                    "moneda_cliente":moneda_cliente
                     }
 
             #Commit y Retorno de datos
@@ -266,20 +265,21 @@ class UsuariosService:
                 LOG.info(f"{mensaje_result}: {correo_cliente}")
                 return api_response(STATUS_CODE_200,{},RESET_PASS_FAILED,CORREO_ENVIADO)
 
-            # Generamos JWT para el reinicio de contraseña con vigencia de 15 min
+            # Generamos JWT para el reinicio de contraseña con vigencia de 5 min
             # Puedes guardar claims adicionales si requieres verificar el propósito del token
             reset_token = create_access_token(
                 identity=correo_cliente,
-                expires_delta=timedelta(minutes=10),
+                expires_delta=timedelta(minutes=5),
                 additional_claims={"type": "password_reset"}
             )
-             # Obtenemos la ruta de variable de entorno
-            URL_FRONT = os.getenv("COBRANZA_FLASK_SERVER_DEV")
+
+            # Obtenemos la ruta de variable de entorno
+            URL_FRONT = os.getenv("COBRANZA_FLASK_SERVER_FRONT")
             # Construir la URL del Frontend con el token
             frontend_url = URL_FRONT # O toma la variable desde la configuración
             action_url = f"{frontend_url}/actualizar-password?token={reset_token}"
 
-            #Parametros para rendereizar en el correo
+            # Parametros para rendereizar en el template del correo
             datos_correo = {
                 "para": correo_cliente,
                 "asunto": ASUNTO_MAIL,

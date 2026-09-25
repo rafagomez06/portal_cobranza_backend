@@ -22,7 +22,7 @@ CatalogosController  = Blueprint("catalogo", __name__)
 #     return ChecadorService.registrar_checada(data)
 
 @CatalogosController.route("/tipos-facturas", methods=["GET"])
-#@jwt_required()
+@jwt_required()
 @limiter.limit("10 per minute")
 def obtener_tipos_facturas():
     data = request.args.to_dict()

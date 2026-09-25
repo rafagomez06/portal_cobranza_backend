@@ -23,14 +23,24 @@ class CatalogoService:
     def obtener_tipos_facturas(data):
         try:
             LOG.info("## obtener_tipos_facturas ##")
-            listado_result = CatalogoModel.obtener_tipos_facturas()
+            
+            clv_tipo = data["clv_tipo"]
+
+            # Normaliza: None si no hay valor, si es None, o si es cadena vacía
+            if clv_tipo is None:
+                clv_tipo = None
+            else:
+                clv_tipo = str(clv_tipo).strip()
+                clv_tipo = clv_tipo if clv_tipo != "" else ""
+
+            listado_result = CatalogoModel.obtener_tipos_facturas(clv_tipo)
             # Convertimos valores obtenidos
             columns = listado_result.keys()
             rows = listado_result.fetchall()
 
             # Validamos resultado
             if columns is None or len(rows) == 0:
-                LOG.info(f"GET /historial-checadas")
+                LOG.info(f"GET /catalogo/tipos-facturas")
                 return api_response(STATUS_CODE_404, [],ERROR,ERROR_EMPTY)
 
             df_result = pd.DataFrame(rows, columns=columns)

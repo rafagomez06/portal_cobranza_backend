@@ -19,8 +19,8 @@ class CatalogoModel(sql_connection.Model):
         self.nombre = nombre
 
     @staticmethod
-    def obtener_tipos_facturas():
-        sql = text(f"EXEC sp_ObtenerCatalogoTiposFacturas_SIC;")
+    def obtener_tipos_facturas(clv_tipo):
+        sql = text(f"EXEC sp_ObtenerCatalogoTiposFacturas_SIC @ClvTipo='{clv_tipo}';")
         LOG.info(f"## Consulta: {sql}")
         result = sql_connection.session.execute(sql)
         return result
