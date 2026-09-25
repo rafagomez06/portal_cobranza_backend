@@ -33,7 +33,7 @@ class Config:
     # JWT token expira en 8 horas por defecto
     #JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
-    #JWT_ACCESS_TOKEN_EXPIRES = timedelta(seconds=15)
+    #JWT_ACCESS_TOKEN_EXPIRES = timedelta(seconds=20)
 
 class DevelopmentConfig(Config):
     DEBUG = True

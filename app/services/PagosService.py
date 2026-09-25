@@ -94,10 +94,6 @@ class PagosService:
             df_result["fecha"] = df_result["fecha"].dt.strftime("%Y-%m-%d")
             df_result["fecha_vencimiento"] = df_result["fecha_vencimiento"].dt.strftime("%Y-%m-%d")
 
-
-
-
-
             total_registros = len(df_result) 
 
             # Limpiar variables antes de asignar nuevos valores

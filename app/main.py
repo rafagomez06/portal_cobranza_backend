@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from flask import Flask, jsonify
+from flask import Flask, jsonify,request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
@@ -9,7 +9,6 @@ from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_limiter.errors import RateLimitExceeded
-
 from app.utils.response import api_response
 from app.utils.Messages import *
 
@@ -24,7 +23,7 @@ bcrypt = Bcrypt()
 
 limiter = Limiter(
     key_func=get_limiter_key,
-    default_limits=["200 per day", "50 per hour"],#50
+    default_limits=["200 per day", "5000 per hour"],#50
     storage_uri="memory://" # En producción cambia a Redis: "redis://localhost:6379"
 )
 # Mensaje Personalizado retorno token expirado
@@ -85,11 +84,14 @@ def create_app(env: str = "default") -> Flask:
     from app.controllers.CatalogosController import CatalogosController
     from app.controllers.UsuariosController import UsuariosController
     from app.controllers.PagosController import PagosController
+    from app.controllers.CorreoController import CorreoController
 
     # Rutas Endpoints
     app.register_blueprint(UsuariosController, url_prefix=f"{URL_PREFIX}/auth")
     app.register_blueprint(CatalogosController, url_prefix=f"{URL_PREFIX}/catalogo")
     app.register_blueprint(PagosController, url_prefix=f"{URL_PREFIX}/pago")
+    app.register_blueprint(CorreoController, url_prefix=f"{URL_PREFIX}/correo")
+
 
 
     # Manejadores de errores globales 
@@ -97,15 +99,16 @@ def create_app(env: str = "default") -> Flask:
 
     # HEALT CHECK ENDPOINT
     @app.route('/api/v1/sic/health', methods=['GET'])
-    @limiter.limit("5 per minute")
+    @limiter.limit("10 per minute")
     def health_check():
-        return jsonify({
+        body_health = {
             "status": "healthy",
             "service": "Sistema Integral Cobranza(SIC) - API",
             "version": "1.0.0",
             "mensaje": "Funcionando OK",
             "timestamp": datetime.now().isoformat()
-        }), 200
+        }
+        return api_response(STATUS_CODE_200,body_health,SUCCESS,'OK')
     
     return app
 

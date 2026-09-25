@@ -12,7 +12,6 @@ UsuariosController  = Blueprint("usuarios", __name__)
 # #####################################
 
 @UsuariosController.route("/login", methods=["POST"])
-# @jwt_required()
 def validar_login():
     data = request.get_json()
     return UsuariosService.validar_login(data)

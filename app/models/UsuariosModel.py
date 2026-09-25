@@ -33,9 +33,9 @@ class UsuariosModel(sql_connection.Model):
         return result
     
     @staticmethod
-    def actualizar_password(cod_cliente,correo,anterior_password,password_hash):
+    def actualizar_password(cod_cliente,correo,password_hash):
         sql = text(f"EXEC sp_ActualizarPasswordCliente_SIC @CodCliente='{cod_cliente}',@Correo='{correo}',"
-                    f"@AnteriorPassword={anterior_password},@NuevaPassword='{password_hash}';")
+                    f"@NuevaPassword='{password_hash}';")
         LOG.info(f"## Consulta: {sql}")
         result = sql_connection.session.execute(sql)
         return result

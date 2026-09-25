@@ -210,7 +210,7 @@ class UsuariosService:
             # Obtenemos valores 
             cod_cliente = data["cod_cliente"].strip()
             correo = data["correo_cliente"].strip()
-            anterior_password = data["anterior_password"]
+            actual_password = data["actual_password"]
             nueva_password = data["nueva_password"]
 
             #Consultamos usuario y validamos
@@ -224,7 +224,7 @@ class UsuariosService:
                 return api_response(STATUS_CODE_401,{},LOGIN_FAILED,mensaje_result)
 
             #Valida si pass es correcto
-            es_pass_valido = check_password(password_hash_result, anterior_password)
+            es_pass_valido = check_password(password_hash_result, actual_password)
 
             if not es_pass_valido:
                 LOG.info(f"Contraseña incorrecta para el cliente: {cod_cliente}")
@@ -234,7 +234,7 @@ class UsuariosService:
             password_hash = set_password(nueva_password)
 
             #Envio de datos
-            actualizar_result = UsuariosModel.actualizar_password(cod_cliente,correo,anterior_password,password_hash)
+            actualizar_result = UsuariosModel.actualizar_password(cod_cliente,correo,password_hash)
 
             # Convertimos valores obtenidos
             columns = actualizar_result.keys()
