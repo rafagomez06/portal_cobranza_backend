@@ -3,7 +3,7 @@ SUCCESS = 'Success'
 ERROR = 'Error'
 MENSAJE = 'Mensaje'
 LOGIN_FAILED = 'login_failed'
-
+RESET_PASS_FAILED = 'reset_pass_failed'
 UPLOAD_FOLDER = 'static/uploads/'
 
 # Mensajes validaciones
@@ -24,7 +24,13 @@ ERROR_EMPTY ='No se encontraron registros.'
 DATA_EMPTY ='No se recibió información.'
 CREDENCIALES_FALLIDAS = 'Credenciales Incorrectas, intenta de nuevo.'
 
+CORREO_ENVIADO = '¡Revisa tu correo electrónico!. Te hemos enviado las instrucciones.'
+ERROR_GENERICO = 'Ocurrió un error.'
 LOGIN_SUCCESS = 'Login exitoso.'
+PASSWORD_SUCCESS = 'Contraseña actualizada correctamente.'
+PARAMS_INCOMPLETOS = 'Parámetros incompletos'
+ENLACE_EXPIRADO = 'El enlace ha expirado. Solicita uno nuevo.'
+ENLACE_INVALIDO ='El enlace de recuperación es inválido.'
 
 # HTTP Status Codes
 STATUS_CODE_200 = 200
@@ -40,3 +46,13 @@ STATUS_CODE_409 = 409
 STATUS_CODE_429 = 429
 STATUS_CODE_500 = 500
 
+
+#Logo Para EMAIL
+LOGO_URL ='https://www.primos-cousins.com.mx/primos-cousins.com.mx/public/thumbs/section-image-3/2018-03/and-logo.png'
+TEMPLATE_URL ='emails_templates/reset_password.html'
+ASUNTO_MAIL= 'Restablecer tu contraseña SIC'
+NOMBRE_SISTEMA = 'Sistema Integral de Cobranza (SIC)'
+NOMBRE_EMPRESA = 'Primos & Cousins'
+CORREO_SOPORTE = 'sistemas@primos-cousins.com.mx'
+DIRECCION_EMPRESA = 'Prol. Álvaro Obregón sur 585-3, Jorge Almada'
+CIUDAD_EMRESA = 'Culiacán Rosales, Sin. 80200'

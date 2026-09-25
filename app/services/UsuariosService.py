@@ -1,5 +1,10 @@
+import os
 from app.models.UsuariosModel import UsuariosModel
-from flask_jwt_extended import create_access_token
+from app.services.CorreoService import CorreoService
+from flask import request
+from flask_jwt_extended import create_access_token,decode_token, get_jwt_identity
+from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
+from datetime import timedelta
 from app.utils.response import api_response
 from app.utils.RaiseException import UnexpectedError
 from app.utils.Logger import logger
@@ -26,7 +31,7 @@ class UsuariosService:
             nom_cliente = data["nom_cliente"].strip()
             rfc_cte = data["rfc_cte"].strip()
             moneda = data["moneda"].strip()
-            correo = data["correo"].strip()
+            correo = data["correo"].strip().lower()
 
             #Envio de datos
             registrar_result = UsuariosModel.registrar_usuario(cod_cliente,
@@ -76,14 +81,13 @@ class UsuariosService:
     def validar_login(data):
         try:
             LOG.info("## validar_login ##")
-            print(data)
             # Obtenemos valores 
             cod_cliente = data["cod_cliente"].strip()
-            correo = data["correo"].strip()
+            correo = data["correo"].strip().lower()
             password = data["password"]
 
             #Consultamos usuario y validamos
-            result_obtener = UsuariosService.obtener_cliente_login(cod_cliente)
+            result_obtener = UsuariosService.obtener_pass_cliente_login(cod_cliente)
             estatus_result = result_obtener["estatus"]
             mensaje_result = result_obtener["mensaje"]
             password_hash_result = result_obtener["password_hash"]
@@ -160,12 +164,12 @@ class UsuariosService:
 
     # Obtiene la pass de cliente hasheada (encriptada)
     @staticmethod
-    def obtener_cliente_login(cliente):
+    def obtener_pass_cliente_login(cliente):
         try:
-            LOG.info("## obtener_cliente_login ##")
+            LOG.info("## obtener_pass_cliente_login ##")
 
             # Obtenemos valores 
-            result = UsuariosModel.obtener_cliente_login(cliente)
+            result = UsuariosModel.obtener_pass_cliente_login(cliente)
 
             # Convertimos valores obtenidos
             columns = result.keys()
@@ -189,56 +193,188 @@ class UsuariosService:
         except exc.StatementError as sta_err:
             error_trace = traceback.format_exc()
             LOG.error(
-                f"Err al realizar la sentencia en obtener_cliente_login:{str(sta_err)} [{error_trace}]")
-            raise DatabaseError("Err al realizar la sentencia SQL - obtener_cliente_login")
+                f"Err al realizar la sentencia en obtener_pass_cliente_login:{str(sta_err)} [{error_trace}]")
+            raise DatabaseError("Err al realizar la sentencia SQL - obtener_pass_cliente_login")
         except exc.SQLAlchemyError as e: 
-            LOG.error(f"DB error en obtener_cliente_login: {str(e)}")
-            raise DatabaseError("Error al consultar la base de datos - obtener_cliente_login")
+            LOG.error(f"DB error en obtener_pass_cliente_login: {str(e)}")
+            raise DatabaseError("Error al consultar la base de datos - obtener_pass_cliente_login")
         except ValueError as e: 
             LOG.warning(f"Parámetro inválido: {str(e)}")
-            raise UnexpectedError("Parámetros de búsqueda inválidos - obtener_cliente_login")
+            raise UnexpectedError("Parámetros de búsqueda inválidos - obtener_pass_cliente_login")
         except Exception as e:  
             error_trace = traceback.format_exc()
             LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
-            raise UnexpectedError("Ocurrió un error inesperado - obtener_cliente_login")      
-    
-    # Actualizar Pass de usuario
+            raise UnexpectedError("Ocurrió un error inesperado - obtener_pass_cliente_login")      
+
+    # Valida correo este vigente para envio de reinicio pass
     @staticmethod
-    def actualizar_password(data):
+    def validar_correo_cliente(correo_cliente):
         try:
-            LOG.info("## actualizar_password ##")
+            LOG.info("## validar_correo_cliente ##")
+
             # Obtenemos valores 
-            cod_cliente = data["cod_cliente"].strip()
-            correo = data["correo_cliente"].strip()
-            actual_password = data["actual_password"]
-            nueva_password = data["nueva_password"]
-
-            #Consultamos usuario y validamos
-            result_obtener = UsuariosService.obtener_cliente_login(cod_cliente)
-            estatus_result = result_obtener["estatus"]
-            mensaje_result = result_obtener["mensaje"]
-            password_hash_result = result_obtener["password_hash"]
-
-            if estatus_result != STATUS_CODE_200:
-                LOG.info(f"{mensaje_result}: {cod_cliente}")
-                return api_response(STATUS_CODE_401,{},LOGIN_FAILED,mensaje_result)
-
-            #Valida si pass es correcto
-            es_pass_valido = check_password(password_hash_result, actual_password)
-
-            if not es_pass_valido:
-                LOG.info(f"Contraseña incorrecta para el cliente: {cod_cliente}")
-                return api_response(STATUS_CODE_401,{},LOGIN_FAILED,CREDENCIALES_FALLIDAS)
-
-            #Hash a nva password
-            password_hash = set_password(nueva_password)
-
-            #Envio de datos
-            actualizar_result = UsuariosModel.actualizar_password(cod_cliente,correo,password_hash)
+            result = UsuariosModel.validar_correo_cliente(correo_cliente)
 
             # Convertimos valores obtenidos
-            columns = actualizar_result.keys()
-            rows = actualizar_result.fetchall()
+            columns = result.keys()
+            rows = result.fetchall()
+            df_result = pd.DataFrame(rows, columns=columns)
+            json_result = df_result.to_json(orient="records")
+            
+            # Procesar el resultado del SP
+            json_data = json.loads(json_result)
+            primer_elemento_sql = json_data[0]
+            estadoSQL = primer_elemento_sql.get('estatus')
+            mensajeSQL = primer_elemento_sql.get('mensaje')
+
+            #Retornamos 
+            return {
+                "estatus": estadoSQL,
+                "mensaje": mensajeSQL
+            }
+        except exc.StatementError as sta_err:
+            error_trace = traceback.format_exc()
+            LOG.error(
+                f"Err al realizar la sentencia en validar_correo_cliente:{str(sta_err)} [{error_trace}]")
+            raise DatabaseError("Err al realizar la sentencia SQL - validar_correo_cliente")
+        except exc.SQLAlchemyError as e: 
+            LOG.error(f"DB error en validar_correo_cliente: {str(e)}")
+            raise DatabaseError("Error al consultar la base de datos - validar_correo_cliente")
+        except ValueError as e: 
+            LOG.warning(f"Parámetro inválido: {str(e)}")
+            raise UnexpectedError("Parámetros de búsqueda inválidos - validar_correo_cliente")
+        except Exception as e:  
+            error_trace = traceback.format_exc()
+            LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
+            raise UnexpectedError("Ocurrió un error inesperado - validar_correo_cliente")  
+
+    # Envio de correo de pass olvidada
+    @staticmethod
+    def solicitar_reiniciar_password_mail(data):
+        try:
+            LOG.info("## solicitar_reiniciar_password_mail ##")
+            # Obtenemos Correo
+            correo_cliente = data["correo"].strip().lower()
+
+            # Consultamos correo sea valido y activo
+            result_obtener = UsuariosService.validar_correo_cliente(correo_cliente)
+            estatus_result = result_obtener["estatus"]
+            mensaje_result = result_obtener["mensaje"]
+
+            # Retornamos 200 para seguridad, mensaje generico.
+            if estatus_result != STATUS_CODE_200:
+                LOG.info(f"{mensaje_result}: {correo_cliente}")
+                return api_response(STATUS_CODE_200,{},RESET_PASS_FAILED,CORREO_ENVIADO)
+
+            # Generamos JWT para el reinicio de contraseña con vigencia de 15 min
+            # Puedes guardar claims adicionales si requieres verificar el propósito del token
+            reset_token = create_access_token(
+                identity=correo_cliente,
+                expires_delta=timedelta(minutes=10),
+                additional_claims={"type": "password_reset"}
+            )
+             # Obtenemos la ruta de variable de entorno
+            URL_FRONT = os.getenv("COBRANZA_FLASK_SERVER_DEV")
+            # Construir la URL del Frontend con el token
+            frontend_url = URL_FRONT # O toma la variable desde la configuración
+            action_url = f"{frontend_url}/actualizar-password?token={reset_token}"
+
+            #Parametros para rendereizar en el correo
+            datos_correo = {
+                "para": correo_cliente,
+                "asunto": ASUNTO_MAIL,
+                "template_name": TEMPLATE_URL,
+                "template_data": {
+                    "nombre": correo_cliente,
+                    "nombre_cuenta": NOMBRE_SISTEMA,
+                    "nombre_empresa": NOMBRE_EMPRESA,
+                    "logo_url": LOGO_URL,
+                    "action_url": action_url,
+                    "correo_soporte": CORREO_SOPORTE,
+                    "direccion_empresa": DIRECCION_EMPRESA,
+                    "ciudad_estado_cp": CIUDAD_EMRESA
+                }
+            }
+            #Envio de correo para reinicio de contraseña
+            CorreoService.enviar_correo(datos_correo)
+
+            return api_response(STATUS_CODE_200,{},CORREO_ENVIADO,CORREO_ENVIADO)
+
+        except exc.StatementError as sta_err:
+            error_trace = traceback.format_exc()
+            LOG.error(
+                f"Err al realizar la sentencia en solicitar_reiniciar_password_mail:{str(sta_err)} [{error_trace}]")
+            raise DatabaseError("Err al realizar la sentencia SQL")
+        except exc.SQLAlchemyError as e: 
+            LOG.error(f"DB error en solicitar_reiniciar_password_mail: {str(e)}")
+            raise DatabaseError("Error al consultar la base de datos - solicitar_reiniciar_password_mail")
+        except ValueError as e: 
+            LOG.warning(f"Parámetro inválido: {str(e)}")
+            raise UnexpectedError("Parámetros de búsqueda inválidos - solicitar_reiniciar_password_mail")
+        except Exception as e:  
+            error_trace = traceback.format_exc()
+            LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
+            raise UnexpectedError("Ocurrió un error inesperado - solicitar_reiniciar_password_mail")   
+
+    @staticmethod
+    def actualizar_password_token(data):
+        try:
+            token = data.get("token")
+            nueva_password = data.get("nueva_password")
+
+            if not token or not nueva_password:
+                return api_response(STATUS_CODE_400, {}, ERROR, PARAMS_INCOMPLETOS)
+
+            # Decodificamos y validamos el token
+            try:
+                decoded_token = decode_token(token)
+            except ExpiredSignatureError:
+                return api_response(STATUS_CODE_400, {}, ERROR, ENLACE_EXPIRADO)
+            except InvalidTokenError:
+                return api_response(STATUS_CODE_400, {}, ERROR, ENLACE_INVALIDO)
+
+            # Verificar el tipo de claim 
+            claims = decoded_token.get("sub", {}) # O en 'type' si usaste additional_claims
+            correo_usuario = decoded_token.get("sub")  # Contiene la identidad especificada al crear el token
+            
+            if decoded_token.get("type") != "password_reset":
+                return api_response(STATUS_CODE_400, {}, ERROR, "Token no autorizado para esta acción")
+
+            #  Encriptamos y actualizamos la contraseña en la bd
+            hashed_password = set_password(nueva_password)
+
+            #Enviarmos parametros
+            data={
+                "correo_usuario":correo_usuario,
+                "hashed_password": hashed_password
+            }
+            # actualizacion en BD de la nueva Pass
+            result_bd = UsuariosService.actualizar_password_bd(data)
+
+            # Convertimos valores obtenidos
+            if result_bd != STATUS_CODE_200:
+                return api_response(STATUS_CODE_400,{},ERROR,ERROR_GENERICO)
+
+            return api_response(STATUS_CODE_200, {}, SUCCESS, PASSWORD_SUCCESS)
+
+        except Exception as e:
+            LOG.error(f"Error al cambiar la contraseña: {str(e)}")
+            raise UnexpectedError("Ocurrió un error al intentar cambiar la contraseña.")
+
+    @staticmethod
+    def actualizar_password_bd(data):
+        try:
+            LOG.info("## actualizar_password_bd ##")
+            # Obtenemos valores 
+            correo_usuario = data["correo_usuario"].strip()
+            nueva_pass = data["hashed_password"].strip()
+
+            #Envio de datos
+            registrar_result = UsuariosModel.actualizar_password(correo_usuario,nueva_pass)
+
+            # Convertimos valores obtenidos
+            columns = registrar_result.keys()
+            rows = registrar_result.fetchall()
             df_result = pd.DataFrame(rows, columns=columns)
             json_result = df_result.to_json(orient="records")
             
@@ -252,27 +388,27 @@ class UsuariosService:
             if estadoSQL != STATUS_CODE_200:
                 LOG.info(f"Error: {mensajeSQL} ")
                 # ConnectionDb.alchemy_db.session.rollback()
-                return api_response(STATUS_CODE_400,{},ERROR,mensajeSQL)
+                return STATUS_CODE_400
             
             #Commit y Retorno de datos
             ConnectionDb.alchemy_db.session.commit()
-            return api_response(STATUS_CODE_200,json_data,SUCCESS,mensajeSQL)        
+            return STATUS_CODE_200
 
         except exc.StatementError as sta_err:
             error_trace = traceback.format_exc()
             LOG.error(
-                f"Err al realizar la sentencia en actualizar_password:{str(sta_err)} [{error_trace}]")
+                f"Err al realizar la sentencia en actualizar_password_bd:{str(sta_err)} [{error_trace}]")
             raise DatabaseError("Err al realizar la sentencia SQL")
         except exc.SQLAlchemyError as e: 
-            LOG.error(f"DB error en actualizar_password: {str(e)}")
-            raise DatabaseError("Error al consultar la base de datos - actualizar_password")
+            LOG.error(f"DB error en actualizar_password_bd: {str(e)}")
+            raise DatabaseError("Error al consultar la base de datos - actualizar_password_bd")
         except ValueError as e: 
             LOG.warning(f"Parámetro inválido: {str(e)}")
-            raise UnexpectedError("Parámetros de búsqueda inválidos - actualizar_password")
+            raise UnexpectedError("Parámetros de búsqueda inválidos")
         except Exception as e:  
             error_trace = traceback.format_exc()
             LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
-            raise UnexpectedError("Ocurrió un error inesperado - actualizar_password")   
+            raise UnexpectedError("Ocurrió un error inesperado - actualizar_password_bd") 
 
 
     # Actualizar Permiso de acceso a sistema

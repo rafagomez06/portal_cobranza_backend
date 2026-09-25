@@ -33,9 +33,8 @@ class UsuariosModel(sql_connection.Model):
         return result
     
     @staticmethod
-    def actualizar_password(cod_cliente,correo,password_hash):
-        sql = text(f"EXEC sp_ActualizarPasswordCliente_SIC @CodCliente='{cod_cliente}',@Correo='{correo}',"
-                    f"@NuevaPassword='{password_hash}';")
+    def actualizar_password(correo,password_hash):
+        sql = text(f"EXEC sp_ActualizarPasswordCliente_SIC @Correo='{correo}', @NuevaPassword='{password_hash}';")
         LOG.info(f"## Consulta: {sql}")
         result = sql_connection.session.execute(sql)
         return result
@@ -48,8 +47,15 @@ class UsuariosModel(sql_connection.Model):
         return result
     
     @staticmethod
-    def obtener_cliente_login(cliente):
-        sql = text(f"EXEC sp_ObtenerClienteLogin_SIC @CodCliente='{cliente}';")
+    def obtener_pass_cliente_login(cliente):
+        sql = text(f"EXEC sp_ObtenerPassClienteLogin_SIC @CodCliente='{cliente}';")
+        LOG.info(f"## Consulta: {sql}")
+        result = sql_connection.session.execute(sql)
+        return result
+    
+    @staticmethod
+    def validar_correo_cliente(correo_cliente):
+        sql = text(f"EXEC sp_ValidarCorreoCliente_SIC @Correo='{correo_cliente}';")
         LOG.info(f"## Consulta: {sql}")
         result = sql_connection.session.execute(sql)
         return result

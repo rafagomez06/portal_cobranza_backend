@@ -22,11 +22,15 @@ def registrar_usuario():
     data = request.get_json()
     return UsuariosService.registrar_usuario(data)
 
-@UsuariosController.route("/actualizar-password", methods=["PUT"])
-@jwt_required()
-def actualizar_password():
+@UsuariosController.route("/solicitar-reiniciar-password", methods=["POST"])
+def solicitar_reiniciar_password_mail():
     data = request.get_json()
-    return UsuariosService.actualizar_password(data)
+    return UsuariosService.solicitar_reiniciar_password_mail(data)
+
+@UsuariosController.route("/actualizar-password", methods=["POST"])
+def actualizar_password_token():
+    data = request.get_json()
+    return UsuariosService.actualizar_password_token(data)
 
 @UsuariosController.route("/actualizar-permiso-sic", methods=["PUT"])
 @jwt_required()
