@@ -33,7 +33,7 @@ def token_expirado_callback(jwt_header, jwt_payload):
         "body": {
             "status_code": STATUS_CODE_401,
             "status_message": "token_expired",
-            "message": "El token ha expirado. Por favor, vuelve a iniciar sesión.",
+            "message": "La sesión ha expirado. Por favor, vuelve a iniciar sesión.",
             "data": None
         }
     }), 401

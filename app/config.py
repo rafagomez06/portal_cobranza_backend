@@ -30,9 +30,10 @@ class Config:
     UPLOAD_FOLDER = env.upload_folder
     MAX_CONTENT_LENGTH = env.max_content_length
 
+    # Configuracion de duracion de token JWT
     # JWT token expira en 8 horas por defecto
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
-    #JWT_ACCESS_TOKEN_EXPIRES = timedelta(seconds=20)
+    #JWT_ACCESS_TOKEN_EXPIRES = timedelta(seconds=10)
 
 class DevelopmentConfig(Config):
     DEBUG = True
