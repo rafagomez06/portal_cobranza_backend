@@ -17,17 +17,10 @@ class UsuariosModel(sql_connection.Model):
     def __init__(self, id_UsuariosModel, nombre=None) -> None:
         self.id_UsuariosModel = id_UsuariosModel
         self.nombre = nombre
-
-    @staticmethod
-    def obtener_usuarios():
-        sql = text(f"EXEC sp_ObtenerListadoUsuariosChecadorApp;")
-        LOG.info(f"## Consulta: {sql}")
-        result = sql_connection.session.execute(sql)
-        return result
     
     @staticmethod
-    def validar_login(cliente,correo,password_hash):
-        sql = text(f"EXEC sp_ValidarClientes_SIC @CodCliente='{cliente}',@Correo='{correo}',@Password='{password_hash}';")
+    def validar_login(parametro,password_hash):
+        sql = text(f"EXEC sp_ValidarClientes_SIC @Parametro='{parametro}',@Password='{password_hash}';")
         LOG.info(f"## Consulta: {sql}")
         result = sql_connection.session.execute(sql)
         return result
@@ -47,8 +40,8 @@ class UsuariosModel(sql_connection.Model):
         return result
     
     @staticmethod
-    def obtener_pass_cliente_login(cliente):
-        sql = text(f"EXEC sp_ObtenerPassClienteLogin_SIC @CodCliente='{cliente}';")
+    def obtener_pass_cliente_login(parametro):
+        sql = text(f"EXEC sp_ObtenerPassClienteLogin_SIC @Parametro='{parametro}';")
         LOG.info(f"## Consulta: {sql}")
         result = sql_connection.session.execute(sql)
         return result

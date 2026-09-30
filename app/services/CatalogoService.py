@@ -23,16 +23,7 @@ class CatalogoService:
     def obtener_tipos_facturas(data):
         try:
             LOG.info("## obtener_tipos_facturas ##")
-            
-            clv_tipo = data["clv_tipo"]
-
-            # Normaliza: None si no hay valor, si es None, o si es cadena vacía
-            if clv_tipo is None:
-                clv_tipo = None
-            else:
-                clv_tipo = str(clv_tipo).strip()
-                clv_tipo = clv_tipo if clv_tipo != "" else ""
-
+            clv_tipo = data["clv_tipo"].strip()
             listado_result = CatalogoModel.obtener_tipos_facturas(clv_tipo)
             # Convertimos valores obtenidos
             columns = listado_result.keys()

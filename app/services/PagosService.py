@@ -70,8 +70,11 @@ class PagosService:
     def listado_facturas(data):
         try:
             LOG.info("## listado_facturas ##")
-            cod_cliente = data["cod_cliente"].strip()
-            listado_result = PagosModel.obtener_facturas(cod_cliente)
+            rfc_cliente = data["rfc"].strip()
+            moneda = data["moneda"].strip()
+
+
+            listado_result = PagosModel.obtener_facturas(rfc_cliente,moneda)
 
             # Convertimos valores obtenidos
             columns = listado_result.keys()
@@ -88,6 +91,10 @@ class PagosService:
             df_result["fecha"] = pd.to_datetime(df_result["fecha"])
             df_result["fecha_vencimiento"] = pd.to_datetime(df_result["fecha_vencimiento"])
             df_result["importe_factura"] = df_result["importe_factura"].apply(formato_moneda)
+            #df_result["impuesto"] = df_result["impuesto"].apply(formato_moneda)
+            #df_result["importe_con_impuesto"] = df_result["importe_con_impuesto"].apply(formato_moneda)
+            df_result["importe_abonar"] = df_result["importe_abonar"].apply(formato_moneda)
+            df_result["saldo_pendiente_factura"] = df_result["saldo_pendiente_factura"].apply(formato_moneda)
 
 
             # Formateo fechas

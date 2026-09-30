@@ -81,29 +81,32 @@ class UsuariosService:
         try:
             LOG.info("## validar_login ##")
             # Obtenemos valores 
-            cod_cliente = data["cod_cliente"].strip()
-            correo = data["correo"].strip().lower()
+            rfc_cliente = data.get("rfc", "").strip().lower()
+            correo = data.get("correo", "").strip().lower()
             password = data["password"]
 
+            # Si viene RFC lo usamos, si no ,usamos correo
+            parametro = rfc_cliente if rfc_cliente and not correo else correo
+
             #Consultamos usuario y validamos
-            result_obtener = UsuariosService.obtener_pass_cliente_login(cod_cliente)
+            result_obtener = UsuariosService.obtener_pass_cliente_login(parametro)
             estatus_result = result_obtener["estatus"]
             mensaje_result = result_obtener["mensaje"]
             password_hash_result = result_obtener["password_hash"]
 
             if estatus_result != STATUS_CODE_200:
-                LOG.info(f"{mensaje_result}: {cod_cliente}")
+                LOG.info(f"{mensaje_result}: {rfc_cliente}")
                 return api_response(STATUS_CODE_401,{},LOGIN_FAILED,mensaje_result)
 
             #Valida si pass es correcto
             es_pass_valido = check_password(password_hash_result, password)
 
             if not es_pass_valido:
-                LOG.info(f"Contraseña incorrecta para el cliente: {cod_cliente}")
+                LOG.info(f"Contraseña incorrecta para el cliente: {parametro}")
                 return api_response(STATUS_CODE_401,{},LOGIN_FAILED,CREDENCIALES_FALLIDAS)
             
             #Validamos login
-            valida_result = UsuariosModel.validar_login(cod_cliente,correo,password_hash_result)
+            valida_result = UsuariosModel.validar_login(parametro,password_hash_result)
 
             # Convertimos valores obtenidos
             columns = valida_result.keys()
@@ -116,10 +119,10 @@ class UsuariosService:
             primer_elemento_sql = json_data[0]
             estadoSQL = primer_elemento_sql.get('estatus')
             mensajeSQL = primer_elemento_sql.get('mensaje')
-            cod_clienteSQL = primer_elemento_sql.get('cod_cliente')
+            # cod_clienteSQL = primer_elemento_sql.get('cod_cliente')
             nom_clienteSQL = primer_elemento_sql.get('nom_cliente')
-            correo_clienteSQL = primer_elemento_sql.get('correo')
-            moneda_cliente = primer_elemento_sql.get('moneda')
+            # correo_clienteSQL = primer_elemento_sql.get('correo')
+            # moneda_cliente = primer_elemento_sql.get('moneda')
 
             # si SP falla se retorna su respuesta
             if estadoSQL != STATUS_CODE_200:
@@ -127,7 +130,7 @@ class UsuariosService:
                 # ConnectionDb.alchemy_db.session.rollback()
                 return api_response(STATUS_CODE_400,{},LOGIN_FAILED,mensajeSQL)
 
-            cliente_key = (cod_clienteSQL + correo_clienteSQL+password_hash_result)
+            cliente_key = (nom_clienteSQL + nom_clienteSQL + password_hash_result)
             # Generamos token unico
             token = create_access_token(identity=str(cliente_key))
 
@@ -136,10 +139,10 @@ class UsuariosService:
             # Convertimos las filas de datos en una lista de diccionarios
             t_body = {
                     "token": token,
-                    "cod_cliente":cod_clienteSQL,
+                    # "cod_cliente":cod_clienteSQL,
                     "nom_cliente":nom_clienteSQL,
-                    "correo_cliente":correo_clienteSQL,
-                    "moneda_cliente":moneda_cliente
+                    # "correo_cliente":correo_clienteSQL,
+                    # "moneda_cliente":moneda_cliente
                     }
 
             #Commit y Retorno de datos
@@ -163,12 +166,12 @@ class UsuariosService:
 
     # Obtiene la pass de cliente hasheada (encriptada)
     @staticmethod
-    def obtener_pass_cliente_login(cliente):
+    def obtener_pass_cliente_login(parametro):
         try:
             LOG.info("## obtener_pass_cliente_login ##")
 
             # Obtenemos valores 
-            result = UsuariosModel.obtener_pass_cliente_login(cliente)
+            result = UsuariosModel.obtener_pass_cliente_login(parametro)
 
             # Convertimos valores obtenidos
             columns = result.keys()

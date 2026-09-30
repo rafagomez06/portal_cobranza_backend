@@ -18,8 +18,8 @@ class PagosModel(sql_connection.Model):
         self.nombre = nombre
 
     @staticmethod
-    def obtener_facturas(cod_cliente):
-        sql = text(f"EXEC sp_ObtenerFacturasCliente_SIC @CodCliente='{cod_cliente}';")
+    def obtener_facturas(rfc_cliente,moneda):
+        sql = text(f"EXEC sp_ObtenerFacturasCliente_SIC @Rfc='{rfc_cliente}',@Moneda='{moneda}';")
         LOG.info(f"## Consulta: {sql}")
         result = sql_connection.session.execute(sql)
         return result
