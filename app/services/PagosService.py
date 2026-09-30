@@ -1,6 +1,6 @@
 from app.models.PagosModel import PagosModel
 from flask_jwt_extended import create_access_token
-from app.utils.FormateoData import formato_moneda
+from app.utils.FormateoData import formato_moneda,_trim
 from app.utils.response import api_response
 from app.utils.RaiseException import UnexpectedError
 from app.utils.Logger import logger
@@ -11,6 +11,8 @@ from app.utils.RaiseException import ( DatabaseError,  UnexpectedError)
 from app.utils.Messages import *
 from app.utils.PassConvert import set_password,check_password
 from app.main import ConnectionDb
+from app.models.UsuariosModel import UsuariosModel
+
 from app.utils.FileTools import FileTools  
 
 from sqlalchemy import exc
@@ -72,13 +74,31 @@ class PagosService:
             LOG.info("## listado_facturas ##")
             rfc_cliente = data["rfc"].strip()
             moneda = data["moneda"].strip()
+            # Busca el codigo del cliente primero
+            codigo_result = UsuariosModel.obtener_codigo_cliente(rfc_cliente,moneda)
+            # Convertimos valores obtenidos
+            codigo_columns = codigo_result.keys()
+            codigo_rows = codigo_result.fetchall()
 
+            df_codigo_result = pd.DataFrame(codigo_rows, columns=codigo_columns)
+            json_result = df_codigo_result.to_json(orient="records")
+            
+            # Procesar el resultado del SP Codigo Empleado
+            json_data = json.loads(json_result)
+            primer_elemento_sql = json_data[0]
+            idUsuarioSQL = primer_elemento_sql.get('id_usuario')
+            codClienteSQL = _trim(primer_elemento_sql.get('cod_cliente'))
+            nomClienteSQL = _trim(primer_elemento_sql.get('nom_cliente'))
+            rfcClienteSQL = _trim(primer_elemento_sql.get('rfc_cte'))
+            monedaClienteSQL = _trim(primer_elemento_sql.get('moneda'))
+            correoClienteSQL = _trim(primer_elemento_sql.get('correo'))
 
-            listado_result = PagosModel.obtener_facturas(rfc_cliente,moneda)
-
+            # Buscamos facturas del codCliente
+            listado_result = PagosModel.obtener_facturas(codClienteSQL)
             # Convertimos valores obtenidos
             columns = listado_result.keys()
             rows = listado_result.fetchall()
+            
 
             # Validamos resultado
             if columns is None or len(rows) == 0:
@@ -87,6 +107,9 @@ class PagosService:
             
             # Resultados
             df_result = pd.DataFrame(rows, columns=columns)
+
+           
+
             # Obtenemos registros de fechas para formatear como 'YYYY-MM-DD'
             df_result["fecha"] = pd.to_datetime(df_result["fecha"])
             df_result["fecha_vencimiento"] = pd.to_datetime(df_result["fecha_vencimiento"])
@@ -95,7 +118,6 @@ class PagosService:
             #df_result["importe_con_impuesto"] = df_result["importe_con_impuesto"].apply(formato_moneda)
             df_result["importe_abonar"] = df_result["importe_abonar"].apply(formato_moneda)
             df_result["saldo_pendiente_factura"] = df_result["saldo_pendiente_factura"].apply(formato_moneda)
-
 
             # Formateo fechas
             df_result["fecha"] = df_result["fecha"].dt.strftime("%Y-%m-%d")
@@ -120,7 +142,13 @@ class PagosService:
             # resultado
             data = {
                 "t_header":t_head,
-                "t_body":t_body
+                "t_body":t_body,
+                "id_usuario": idUsuarioSQL,
+                "cod_cliente": codClienteSQL,
+                "nom_cliente": nomClienteSQL,
+                "rfc_cte": rfcClienteSQL,
+                "moneda": monedaClienteSQL,
+                "correo": correoClienteSQL
             }
             return api_response(STATUS_CODE_200,data,SUCCESS,msj)
 

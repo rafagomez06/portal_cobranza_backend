@@ -54,6 +54,13 @@ class UsuariosModel(sql_connection.Model):
         return result
     
     @staticmethod
+    def obtener_codigo_cliente(rfc_cliente,moneda):
+        sql = text(f"EXEC sp_ObtenerCodCliente_SIC @Rfc='{rfc_cliente}',@Moneda='{moneda}';")
+        LOG.info(f"## Consulta: {sql}")
+        result = sql_connection.session.execute(sql)
+        return result
+    
+    @staticmethod
     def registrar_usuario(cod_cliente, nom_cliente,rfc_cte,moneda,correo):
         sql = text(f"EXEC sp_RegistrarCliente_SIC @CodCliente='{cod_cliente}',@NomCliente='{nom_cliente}',"
                 f"@RfcCliente='{rfc_cte}',@Moneda='{moneda}',@CorreoCliente='{correo}';")
