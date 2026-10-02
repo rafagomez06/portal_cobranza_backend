@@ -3,6 +3,8 @@ import uuid
 from PIL import Image
 from dotenv import load_dotenv
 from app.utils.Logger import logger
+from datetime import datetime
+
 
 LOG = logger()
 
@@ -52,13 +54,31 @@ class FileTools:
         return ext in ALLOWED_EXTENSIONS
 
     @staticmethod
-    def generar_nombre_unico(nombre_original: str) -> str:
+    def generar_nombre_unico(nombre_original):
         """
         Genera un nombre único con UUID para evitar colisiones.
-        Ejemplo: 'foto.jpg' → 'a3f1c2d4-...-uuid.jpg'
+        Ejemplo: 'foto.jpg''a3f1c2d4-...-uuid.jpg'
         """
         ext = nombre_original.rsplit('.', 1)[1].lower() if '.' in nombre_original else 'jpg'
         return f"{uuid.uuid4().hex}.{ext}"
+    
+    @staticmethod
+    def generar_nombre_personalizado(nombre_original,cod_cliente,rfc):
+        """
+        Genera un nombre único con codigo y rfc de cliente para evitar colisiones agregando timestamp.
+        Ejemplo: 'DI456_BAC800208B25_20261001095739892.pdf'
+        """
+        # Genera tiempo con milisegundos
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
+        # Obtiene extension de archivo
+        ext = nombre_original.rsplit('.', 1)[1].lower() if '.' in nombre_original else 'jpg'
+        #hex_limpio = uuid.uuid4().hex
+        #primeros_12 = hex_limpio[:12]
+        
+        # Armado de nombre
+        nombre_archivo_actualizado = f"{cod_cliente}_{rfc}_{timestamp}.{ext}"
+
+        return nombre_archivo_actualizado
 
     @staticmethod
     def validar_es_imagen(ruta_completa: str) -> bool:
@@ -109,25 +129,40 @@ class FileTools:
         return nombre_unico
 
     @staticmethod
-    def guardar_archivo_cobranza(archivo) -> str | None:
+    def guardar_archivo_cobranza(archivo,cod_cliente,rfc):
         #valida extension de archivo
         if not FileTools.extension_permitida(archivo.filename):
             LOG.warning(f"Extensión no permitida: {archivo.filename}")
             return None
         
+        # Carpeta Cliente
+        cod_cliente_folder = cod_cliente.upper()
+        
         # Obtenemos la ruta de variable de entorno
         server_destino = os.getenv("IP_SERVER_FILE")
-        carpeta_destino = os.getenv("UPLOAD_FOLDER")
-        ruta_destino = (f"{server_destino}{carpeta_destino}")
-        #ruta_destino = os.path.join(server_destino, carpeta_destino)
-        print("## RUTA DESTINO: ", ruta_destino)
+        carpeta_destino = os.getenv("CARPETA_DESTINO")
+        
+        # Armado de ruta
+        ruta_destino = os.path.join(f"{server_destino}{carpeta_destino}", cod_cliente_folder)
 
-        nombre_unico  = FileTools.generar_nombre_unico(archivo.filename)
-        ruta_completa = os.path.join(ruta_destino, nombre_unico)
+        # Crea la carpeta si no existe
+        if ruta_destino and not os.path.exists(ruta_destino):
+            os.makedirs(ruta_destino, exist_ok=True)
 
-        os.makedirs(carpeta_destino, exist_ok=True)
+
+        nombre_archivo_unico  = FileTools.generar_nombre_personalizado(archivo.filename,cod_cliente,rfc)
+        ruta_completa = os.path.join(ruta_destino, nombre_archivo_unico)
+
         archivo.save(ruta_completa)
 
         LOG.info(f"Archivo guardado: {ruta_completa}")
 
-        return ruta_completa
+        info_archivo = {
+            "ruta_completa":ruta_completa,
+            "ip_servidor_archivo":server_destino,
+            "ruta_comprobante":carpeta_destino,
+            "carpeta_padre": cod_cliente_folder,
+            "nombre_archivo":nombre_archivo_unico
+            }
+
+        return info_archivo

@@ -19,12 +19,13 @@ def registrar_pago():
     LOG.info("## registrar_pago ##")
     data = request.form
     files = request.files
-
+    
     # Validar que tenga archivo
     if 'comprobante_file' not in files:
         return api_response(STATUS_CODE_400, [],ERROR,FILE_EMPTY)
 
     comprobante_file = files['comprobante_file']
+
     # Validar que tenga nombre
     if not comprobante_file or comprobante_file.filename == '':
         return api_response(STATUS_CODE_400, [], ERROR, FILE_EMPTY)

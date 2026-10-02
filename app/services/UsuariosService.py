@@ -38,14 +38,12 @@ class UsuariosService:
                                                             ,correo)
 
             # Convertimos valores obtenidos
-            columns = registrar_result.keys()
-            rows = registrar_result.fetchall()
-            df_result = pd.DataFrame(rows, columns=columns)
-            json_result = df_result.to_json(orient="records")
+            rows_registrar = [dict(row._mapping) for row in registrar_result.fetchall()] if registrar_result else []
+            if not rows_registrar:
+                return api_response(STATUS_CODE_404, [],ERROR,"El SP sp_RegistrarCliente_SIC no retornó respuesta.")
             
             # Procesar el resultado del SP
-            json_data = json.loads(json_result)
-            primer_elemento_sql = json_data[0]
+            primer_elemento_sql = rows_registrar[0]
             estadoSQL = primer_elemento_sql.get('estatus')
             mensajeSQL = primer_elemento_sql.get('mensaje')
 
@@ -57,23 +55,21 @@ class UsuariosService:
             
             #Commit y Retorno de datos
             ConnectionDb.alchemy_db.session.commit()
-            return api_response(STATUS_CODE_200,json_data,SUCCESS,mensajeSQL)
+            return api_response(STATUS_CODE_200,rows_registrar,SUCCESS,mensajeSQL)
 
         except exc.StatementError as sta_err:
-            error_trace = traceback.format_exc()
-            LOG.error(
-                f"Err al realizar la sentencia en registrar_usuario:{str(sta_err)} [{error_trace}]")
-            raise DatabaseError("Err al realizar la sentencia SQL")
-        except exc.SQLAlchemyError as e: 
-            LOG.error(f"DB error en registrar_usuario: {str(e)}")
+                LOG.error(f"Err al realizar la sentencia en registrar_usuario: {str(sta_err)} [{traceback.format_exc()}]")
+                raise DatabaseError("Err al realizar la sentencia SQL")
+        except exc.SQLAlchemyError as e:
+            LOG.error(f"DB error en registrar_usuario: {str(e)} [{traceback.format_exc()}]")
             raise DatabaseError("Error al consultar la base de datos - registrar_usuario")
-        except ValueError as e: 
+        except ValueError as e:
             LOG.warning(f"Parámetro inválido: {str(e)}")
             raise UnexpectedError("Parámetros de búsqueda inválidos")
-        except Exception as e:  
+        except Exception as e:
             error_trace = traceback.format_exc()
             LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
-            raise UnexpectedError("Ocurrió un error inesperado - registrar_usuario")     
+            raise UnexpectedError("Ocurrió un error inesperado - registrar_usuario")    
 
     # Valida login de usuario
     @staticmethod
@@ -107,27 +103,20 @@ class UsuariosService:
             
             #Validamos login
             valida_result = UsuariosModel.validar_login(parametro,password_hash_result)
-
             # Convertimos valores obtenidos
-            columns = valida_result.keys()
-            rows = valida_result.fetchall()
-            df_result = pd.DataFrame(rows, columns=columns)
-            json_result = df_result.to_json(orient="records")
+            rows_valida = [dict(row._mapping) for row in valida_result.fetchall()] if valida_result else []
+            if not rows_valida:
+                return api_response(STATUS_CODE_404, [],ERROR,"El SP sp_ValidarClientes_SIC no retornó respuesta.")
             
             # Procesar el resultado del SP
-            json_data = json.loads(json_result)
-            primer_elemento_sql = json_data[0]
+            primer_elemento_sql = rows_valida[0]
             estadoSQL = primer_elemento_sql.get('estatus')
             mensajeSQL = primer_elemento_sql.get('mensaje')
-            # cod_clienteSQL = primer_elemento_sql.get('cod_cliente')
             nom_clienteSQL = primer_elemento_sql.get('nom_cliente')
-            # correo_clienteSQL = primer_elemento_sql.get('correo')
-            # moneda_cliente = primer_elemento_sql.get('moneda')
 
             # si SP falla se retorna su respuesta
             if estadoSQL != STATUS_CODE_200:
                 LOG.info(f"Error: {mensajeSQL} ")
-                # ConnectionDb.alchemy_db.session.rollback()
                 return api_response(STATUS_CODE_400,{},LOGIN_FAILED,mensajeSQL)
 
             cliente_key = (nom_clienteSQL + nom_clienteSQL + password_hash_result)
@@ -139,27 +128,22 @@ class UsuariosService:
             # Convertimos las filas de datos en una lista de diccionarios
             t_body = {
                     "token": token,
-                    # "cod_cliente":cod_clienteSQL,
                     "nom_cliente":nom_clienteSQL,
-                    # "correo_cliente":correo_clienteSQL,
-                    # "moneda_cliente":moneda_cliente
                     }
 
             #Commit y Retorno de datos
             return api_response(STATUS_CODE_200,t_body ,SUCCESS,mensajeSQL)
 
         except exc.StatementError as sta_err:
-            error_trace = traceback.format_exc()
-            LOG.error(
-                f"Err al realizar la sentencia en validar_login:{str(sta_err)} [{error_trace}]")
-            raise DatabaseError("Err al realizar la sentencia SQL - validar_login")
-        except exc.SQLAlchemyError as e: 
-            LOG.error(f"DB error en validar_login: {str(e)}")
+                LOG.error(f"Err al realizar la sentencia en validar_login: {str(sta_err)} [{traceback.format_exc()}]")
+                raise DatabaseError("Err al realizar la sentencia SQL")
+        except exc.SQLAlchemyError as e:
+            LOG.error(f"DB error en validar_login: {str(e)} [{traceback.format_exc()}]")
             raise DatabaseError("Error al consultar la base de datos - validar_login")
-        except ValueError as e: 
+        except ValueError as e:
             LOG.warning(f"Parámetro inválido: {str(e)}")
-            raise UnexpectedError("Parámetros de búsqueda inválidos - validar_login")
-        except Exception as e:  
+            raise UnexpectedError("Parámetros de búsqueda inválidos")
+        except Exception as e:
             error_trace = traceback.format_exc()
             LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
             raise UnexpectedError("Ocurrió un error inesperado - validar_login")       
@@ -172,16 +156,13 @@ class UsuariosService:
 
             # Obtenemos valores 
             result = UsuariosModel.obtener_pass_cliente_login(parametro)
-
             # Convertimos valores obtenidos
-            columns = result.keys()
-            rows = result.fetchall()
-            df_result = pd.DataFrame(rows, columns=columns)
-            json_result = df_result.to_json(orient="records")
+            rows_result = [dict(row._mapping) for row in result.fetchall()] if result else []
+            if not rows_result:
+                return api_response(STATUS_CODE_404, [],ERROR,"El SP sp_ObtenerPassClienteLogin_SIC no retornó respuesta.")
             
             # Procesar el resultado del SP
-            json_data = json.loads(json_result)
-            primer_elemento_sql = json_data[0]
+            primer_elemento_sql = rows_result[0]
             estadoSQL = primer_elemento_sql.get('estatus')
             mensajeSQL = primer_elemento_sql.get('mensaje')
             password_hashSQL = primer_elemento_sql.get('password_hash')
@@ -193,20 +174,18 @@ class UsuariosService:
                 "password_hash": password_hashSQL
             }
         except exc.StatementError as sta_err:
-            error_trace = traceback.format_exc()
-            LOG.error(
-                f"Err al realizar la sentencia en obtener_pass_cliente_login:{str(sta_err)} [{error_trace}]")
-            raise DatabaseError("Err al realizar la sentencia SQL - obtener_pass_cliente_login")
-        except exc.SQLAlchemyError as e: 
-            LOG.error(f"DB error en obtener_pass_cliente_login: {str(e)}")
+                LOG.error(f"Err al realizar la sentencia en obtener_pass_cliente_login: {str(sta_err)} [{traceback.format_exc()}]")
+                raise DatabaseError("Err al realizar la sentencia SQL")
+        except exc.SQLAlchemyError as e:
+            LOG.error(f"DB error en obtener_pass_cliente_login: {str(e)} [{traceback.format_exc()}]")
             raise DatabaseError("Error al consultar la base de datos - obtener_pass_cliente_login")
-        except ValueError as e: 
+        except ValueError as e:
             LOG.warning(f"Parámetro inválido: {str(e)}")
-            raise UnexpectedError("Parámetros de búsqueda inválidos - obtener_pass_cliente_login")
-        except Exception as e:  
+            raise UnexpectedError("Parámetros de búsqueda inválidos")
+        except Exception as e:
             error_trace = traceback.format_exc()
             LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
-            raise UnexpectedError("Ocurrió un error inesperado - obtener_pass_cliente_login")      
+            raise UnexpectedError("Ocurrió un error inesperado - obtener_pass_cliente_login")       
 
     # Valida correo este vigente para envio de reinicio pass
     @staticmethod
@@ -216,16 +195,13 @@ class UsuariosService:
 
             # Obtenemos valores 
             result = UsuariosModel.validar_correo_cliente(correo_cliente)
-
             # Convertimos valores obtenidos
-            columns = result.keys()
-            rows = result.fetchall()
-            df_result = pd.DataFrame(rows, columns=columns)
-            json_result = df_result.to_json(orient="records")
+            rows_result = [dict(row._mapping) for row in result.fetchall()] if result else []
+            if not rows_result:
+                return api_response(STATUS_CODE_404, [],ERROR,"El SP sp_ValidarCorreoCliente_SIC no retornó respuesta.")
             
             # Procesar el resultado del SP
-            json_data = json.loads(json_result)
-            primer_elemento_sql = json_data[0]
+            primer_elemento_sql = result[0]
             estadoSQL = primer_elemento_sql.get('estatus')
             mensajeSQL = primer_elemento_sql.get('mensaje')
 
@@ -235,20 +211,18 @@ class UsuariosService:
                 "mensaje": mensajeSQL
             }
         except exc.StatementError as sta_err:
-            error_trace = traceback.format_exc()
-            LOG.error(
-                f"Err al realizar la sentencia en validar_correo_cliente:{str(sta_err)} [{error_trace}]")
-            raise DatabaseError("Err al realizar la sentencia SQL - validar_correo_cliente")
-        except exc.SQLAlchemyError as e: 
-            LOG.error(f"DB error en validar_correo_cliente: {str(e)}")
+                LOG.error(f"Err al realizar la sentencia en validar_correo_cliente: {str(sta_err)} [{traceback.format_exc()}]")
+                raise DatabaseError("Err al realizar la sentencia SQL")
+        except exc.SQLAlchemyError as e:
+            LOG.error(f"DB error en validar_correo_cliente: {str(e)} [{traceback.format_exc()}]")
             raise DatabaseError("Error al consultar la base de datos - validar_correo_cliente")
-        except ValueError as e: 
+        except ValueError as e:
             LOG.warning(f"Parámetro inválido: {str(e)}")
-            raise UnexpectedError("Parámetros de búsqueda inválidos - validar_correo_cliente")
-        except Exception as e:  
+            raise UnexpectedError("Parámetros de búsqueda inválidos")
+        except Exception as e:
             error_trace = traceback.format_exc()
             LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
-            raise UnexpectedError("Ocurrió un error inesperado - validar_correo_cliente")  
+            raise UnexpectedError("Ocurrió un error inesperado - validar_correo_cliente")       
 
     # Envio de correo de pass olvidada
     @staticmethod
@@ -302,22 +276,19 @@ class UsuariosService:
             CorreoService.enviar_correo(datos_correo)
 
             return api_response(STATUS_CODE_200,{},CORREO_ENVIADO,CORREO_ENVIADO)
-
         except exc.StatementError as sta_err:
-            error_trace = traceback.format_exc()
-            LOG.error(
-                f"Err al realizar la sentencia en solicitar_reiniciar_password_mail:{str(sta_err)} [{error_trace}]")
-            raise DatabaseError("Err al realizar la sentencia SQL")
-        except exc.SQLAlchemyError as e: 
-            LOG.error(f"DB error en solicitar_reiniciar_password_mail: {str(e)}")
+                LOG.error(f"Err al realizar la sentencia en solicitar_reiniciar_password_mail: {str(sta_err)} [{traceback.format_exc()}]")
+                raise DatabaseError("Err al realizar la sentencia SQL")
+        except exc.SQLAlchemyError as e:
+            LOG.error(f"DB error en solicitar_reiniciar_password_mail: {str(e)} [{traceback.format_exc()}]")
             raise DatabaseError("Error al consultar la base de datos - solicitar_reiniciar_password_mail")
-        except ValueError as e: 
+        except ValueError as e:
             LOG.warning(f"Parámetro inválido: {str(e)}")
-            raise UnexpectedError("Parámetros de búsqueda inválidos - solicitar_reiniciar_password_mail")
-        except Exception as e:  
+            raise UnexpectedError("Parámetros de búsqueda inválidos")
+        except Exception as e:
             error_trace = traceback.format_exc()
             LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
-            raise UnexpectedError("Ocurrió un error inesperado - solicitar_reiniciar_password_mail")   
+            raise UnexpectedError("Ocurrió un error inesperado - solicitar_reiniciar_password_mail")    
 
     @staticmethod
     def actualizar_password_token(data):
@@ -376,14 +347,11 @@ class UsuariosService:
             registrar_result = UsuariosModel.actualizar_password(correo_usuario,nueva_pass)
 
             # Convertimos valores obtenidos
-            columns = registrar_result.keys()
-            rows = registrar_result.fetchall()
-            df_result = pd.DataFrame(rows, columns=columns)
-            json_result = df_result.to_json(orient="records")
-            
+            rows_result = [dict(row._mapping) for row in registrar_result.fetchall()] if registrar_result else []
+            if not rows_result:
+                return api_response(STATUS_CODE_404, [],ERROR,"El SP sp_ValidarCorreoCliente_SIC no retornó respuesta.")
             # Procesar el resultado del SP
-            json_data = json.loads(json_result)
-            primer_elemento_sql = json_data[0]
+            primer_elemento_sql = rows_result[0]
             estadoSQL = primer_elemento_sql.get('estatus')
             mensajeSQL = primer_elemento_sql.get('mensaje')
 
@@ -398,20 +366,18 @@ class UsuariosService:
             return STATUS_CODE_200
 
         except exc.StatementError as sta_err:
-            error_trace = traceback.format_exc()
-            LOG.error(
-                f"Err al realizar la sentencia en actualizar_password_bd:{str(sta_err)} [{error_trace}]")
-            raise DatabaseError("Err al realizar la sentencia SQL")
-        except exc.SQLAlchemyError as e: 
-            LOG.error(f"DB error en actualizar_password_bd: {str(e)}")
+                LOG.error(f"Err al realizar la sentencia en actualizar_password_bd: {str(sta_err)} [{traceback.format_exc()}]")
+                raise DatabaseError("Err al realizar la sentencia SQL")
+        except exc.SQLAlchemyError as e:
+            LOG.error(f"DB error en actualizar_password_bd: {str(e)} [{traceback.format_exc()}]")
             raise DatabaseError("Error al consultar la base de datos - actualizar_password_bd")
-        except ValueError as e: 
+        except ValueError as e:
             LOG.warning(f"Parámetro inválido: {str(e)}")
             raise UnexpectedError("Parámetros de búsqueda inválidos")
-        except Exception as e:  
+        except Exception as e:
             error_trace = traceback.format_exc()
             LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
-            raise UnexpectedError("Ocurrió un error inesperado - actualizar_password_bd") 
+            raise UnexpectedError("Ocurrió un error inesperado - actualizar_password_bd")   
 
     @staticmethod
     def obtener_codigo_cliente(rfc_cliente,moneda):
@@ -437,21 +403,18 @@ class UsuariosService:
             return api_response(STATUS_CODE_200,t_body,SUCCESS)
 
         except exc.StatementError as sta_err:
-            error_trace = traceback.format_exc()
-            LOG.error(
-                f"Err al realizar la sentencia en obtener_tipos_facturas:{str(sta_err)} [{error_trace}]")
-            raise DatabaseError("Err al realizar la sentencia SQL")
-        except exc.SQLAlchemyError as e: 
-            LOG.error(f"DB error en obtener_tipos_facturas: {str(e)}")
-            raise DatabaseError("Error al consultar la base de datos - obtener_tipos_facturas")
-        except ValueError as e: 
+                LOG.error(f"Err al realizar la sentencia en obtener_codigo_cliente: {str(sta_err)} [{traceback.format_exc()}]")
+                raise DatabaseError("Err al realizar la sentencia SQL")
+        except exc.SQLAlchemyError as e:
+            LOG.error(f"DB error en obtener_codigo_cliente: {str(e)} [{traceback.format_exc()}]")
+            raise DatabaseError("Error al consultar la base de datos - obtener_codigo_cliente")
+        except ValueError as e:
             LOG.warning(f"Parámetro inválido: {str(e)}")
-            raise UnexpectedError("Parámetros de búsqueda inválidos - obtener_tipos_facturas")
-        except Exception as e:  
+            raise UnexpectedError("Parámetros de búsqueda inválidos")
+        except Exception as e:
             error_trace = traceback.format_exc()
             LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
-            raise UnexpectedError("Ocurrió un error inesperado - obtener_tipos_facturas")
-    
+            raise UnexpectedError("Ocurrió un error inesperado - obtener_codigo_cliente") 
 
     # Actualizar Permiso de acceso a sistema
     @staticmethod
@@ -466,14 +429,12 @@ class UsuariosService:
             actualizar_permiso_result = UsuariosModel.actualizar_permiso_app(usuario,flag_permiso)
 
             # Convertimos valores obtenidos
-            columns = actualizar_permiso_result.keys()
-            rows = actualizar_permiso_result.fetchall()
-            df_result = pd.DataFrame(rows, columns=columns)
-            json_result = df_result.to_json(orient="records")
+            rows_result = [dict(row._mapping) for row in actualizar_permiso_result.fetchall()] if actualizar_permiso_result else []
+            if not rows_result:
+                return api_response(STATUS_CODE_404, [],ERROR,"El SP sp_ValidarCorreoCliente_SIC no retornó respuesta.")
             
             # Procesar el resultado del SP
-            json_data = json.loads(json_result)
-            primer_elemento_sql = json_data[0]
+            primer_elemento_sql = rows_result[0]
             estadoSQL = primer_elemento_sql.get('estatus')
             mensajeSQL = primer_elemento_sql.get('mensaje')
 
@@ -485,23 +446,21 @@ class UsuariosService:
             
             #Commit y Retorno de datos
             ConnectionDb.alchemy_db.session.commit()
-            return api_response(STATUS_CODE_200,json_data,SUCCESS,mensajeSQL)        
+            return api_response(STATUS_CODE_200,rows_result,SUCCESS,mensajeSQL)        
 
         except exc.StatementError as sta_err:
-            error_trace = traceback.format_exc()
-            LOG.error(
-                f"Err al realizar la sentencia en actualizar_permiso_app:{str(sta_err)} [{error_trace}]")
-            raise DatabaseError("Err al realizar la sentencia SQL")
-        except exc.SQLAlchemyError as e: 
-            LOG.error(f"DB error en actualizar_permiso_app: {str(e)}")
-            raise DatabaseError("Error al consultar la base de datos - actualizar_permiso_app")
-        except ValueError as e: 
+                LOG.error(f"Err al realizar la sentencia en actualizar_permiso_sic: {str(sta_err)} [{traceback.format_exc()}]")
+                raise DatabaseError("Err al realizar la sentencia SQL")
+        except exc.SQLAlchemyError as e:
+            LOG.error(f"DB error en actualizar_permiso_sic: {str(e)} [{traceback.format_exc()}]")
+            raise DatabaseError("Error al consultar la base de datos - actualizar_permiso_sic")
+        except ValueError as e:
             LOG.warning(f"Parámetro inválido: {str(e)}")
-            raise UnexpectedError("Parámetros de búsqueda inválidos - actualizar_permiso_app")
-        except Exception as e:  
+            raise UnexpectedError("Parámetros de búsqueda inválidos")
+        except Exception as e:
             error_trace = traceback.format_exc()
             LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
-            raise UnexpectedError("Ocurrió un error inesperado - actualizar_permiso_app")           
+            raise UnexpectedError("Ocurrió un error inesperado - actualizar_permiso_sic")           
 
     @staticmethod
     def listado_usuarios(data):
@@ -529,7 +488,6 @@ class UsuariosService:
             msj = f"{total_registros} Empleado(s) encontrado(s)"
             
             return api_response(STATUS_CODE_200,t_body,SUCCESS,msj)
-
 
         except Exception as e:
                 LOG.error(f"Error generando PDF: {e}")

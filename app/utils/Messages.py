@@ -5,7 +5,7 @@ MENSAJE = 'Mensaje'
 LOGIN_FAILED = 'login_failed'
 RESET_PASS_FAILED = 'reset_pass_failed'
 UPLOAD_FOLDER = 'static/uploads/'
-
+FACTURAS_VACIAS = 'No se recibieron Facturas'
 # Mensajes validaciones
 ADMIN_EXISTENTE = 'Este usuario Administrador ya existe, intenta con otro.'
 ADMIN_CREADO_EXITOSAMENTE = 'Administrador creado Exitosamente.'

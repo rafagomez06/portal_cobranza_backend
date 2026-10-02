@@ -92,8 +92,6 @@ def create_app(env: str = "default") -> Flask:
     app.register_blueprint(PagosController, url_prefix=f"{URL_PREFIX}/pago")
     app.register_blueprint(CorreoController, url_prefix=f"{URL_PREFIX}/correo")
 
-
-
     # Manejadores de errores globales 
     _register_error_handlers(app)
 
