@@ -33,34 +33,39 @@ class PagosService:
             importe_disponible = data.get("importe_disponible")
             importe_abonado = data.get("importe_abonado")
             comprobante_file = files['comprobante_file']
-            # Detalle de facturas seleccionadas
-            facturas_str = data.get("facturas", "[]")
 
-            # Validación si no llegan las facturas
-            if not facturas_str:
-                return api_response(STATUS_CODE_400,{},ERROR,FACTURAS_VACIAS)
+            # Validacion si vienen facturas en el payload (Front)
+            if "facturas" in data:
+                # Detalle de facturas seleccionadas
+                facturas_str = data.get("facturas", "[]")
+                LOG.info(f"Facturas: {len(facturas_str)} elementos")
+
+                # parsear el JSON recibido
+                try:
+                    facturas = json.loads(facturas_str)
+                except json.JSONDecodeError:
+                    # falla el JSON o esta mal formado, fallback a lista vacía
+                    facturas = []
+
+                facturas_data = [
+                    {
+                        'orden': item.get('orden'),
+                        'factura': item.get('factura'),
+                        'fecha': item.get('fecha'),
+                        'tipo_moneda': item.get('tipo_moneda'),
+                        'importe_factura': float(item.get('importe_factura', 0)),  
+                        'importe_abonado': float(item.get('importe_abonado', 0)),
+                        'importe_abonar': float(item.get('importe_abonar', 0)),
+                        'saldo_pendiente': float(item.get('saldo_pendiente_factura', 0))
+                    }
+                    for item in facturas
+                ]                
+                tieneFacturas = True
+            else:
+                tieneFacturas = False
+                facturas_data = []
+                LOG.info("Facturas: no recibe facturas de Payload.")
             
-            # parsear el JSON recibido
-            try:
-                facturas = json.loads(facturas_str)
-            except json.JSONDecodeError:
-                # falla el JSON o esta mal formado, fallback a lista vacía
-                facturas = []
-
-            facturas_data = [
-                {
-                    'orden': item.get('orden'),
-                    'factura': item.get('factura'),
-                    'fecha': item.get('fecha'),
-                    'tipo_moneda': item.get('tipo_moneda'),
-                    'importe_factura': float(item.get('importe_factura', 0)),  
-                    'importe_abonado': float(item.get('importe_abonado', 0)),
-                    'importe_abonar': float(item.get('importe_abonar', 0)),
-                    'saldo_pendiente': float(item.get('saldo_pendiente_factura', 0))
-                }
-                for item in facturas
-            ]
-
             # Guardamos ruta del archivo
             info_archivo = FileTools.guardar_archivo_cobranza(comprobante_file,cod_cliente,rfc_cliente)
             ruta_completa = info_archivo['ruta_completa']
@@ -79,7 +84,8 @@ class PagosService:
             # Convertimos valores obtenidos
             rows_pago = [dict(row._mapping) for row in registrar_pago_result.fetchall()] if registrar_pago_result else []
             if not rows_pago:
-                return api_response(STATUS_CODE_404, [],ERROR,"El SP sp_RegistrarPagos_SIC no retornó respuesta.")
+                LOG.info(f"Error: El SP sp_RegistrarPagos_SIC no retornó respuesta.")                
+                return api_response(STATUS_CODE_404, [],ERROR,ERROR_GUARDADO)
             
             # Procesar el resultado del SP sp_RegistrarPagos_SIC
             primer_elemento_sql = rows_pago[0]
@@ -88,7 +94,7 @@ class PagosService:
             idPagoSQL = primer_elemento_sql.get('id_pago')
             # Obtenemos ID generado
             id_generado = {"id_generado":idPagoSQL}
-
+            
             # si SP falla se retorna su respuesta
             if estadoSQL != STATUS_CODE_200:
                 LOG.info(f"Error: {mensajeSQL} ")
@@ -101,7 +107,8 @@ class PagosService:
             # Convertimos valores obtenidos
             rows_archivo = [dict(row._mapping) for row in registrar_archivo_pago_result.fetchall()] if registrar_archivo_pago_result else []
             if not rows_archivo:
-                return api_response(STATUS_CODE_404, [],ERROR,"El SP sp_RegistrarComprobantePago_SIC no retornó respuesta.")
+                LOG.info(f"Error: El SP sp_RegistrarComprobantePago_SIC no retornó respuesta.")
+                return api_response(STATUS_CODE_404, [],ERROR,ERROR_GUARDADO)
 
             # Procesar el resultado del SP sp_RegistrarComprobantePago_SIC
             primer_elemento_sql = rows_archivo[0]
@@ -115,28 +122,33 @@ class PagosService:
                 return api_response(STATUS_CODE_400,{},ERROR,mensajeSQL)
 
             # Guardamos en tabla de detalle 
-            registrar_pago_det_result = PagosModel.registrar_pago_detalle(idPagoSQL,facturas_data)
-            # Convertimos valores obtenidos
-            rows_detalle = [dict(row._mapping) for row in registrar_pago_det_result.fetchall()] if registrar_pago_det_result else []
-            if not rows_detalle:
-                return api_response(STATUS_CODE_404, [],ERROR,"El SP sp_RegistrarPagosDetalle_SIC no retornó respuesta.")                
-            
-            # Procesar el resultado del SP sp_RegistrarPagosDetalle_SIC
-            primer_elemento_sql = rows_detalle[0]
-            estadoSQL = primer_elemento_sql.get('estatus')
-            mensajeSQL = primer_elemento_sql.get('mensaje')
-            
-            # si SP falla se retorna su respuesta
-            if estadoSQL != STATUS_CODE_200:
-                LOG.info(f"Error: {mensajeSQL} ")
-                PagosService.limpiar_recursos(ruta_completa)
-                return api_response(STATUS_CODE_400,{},ERROR,mensajeSQL)
+            if tieneFacturas:
+                registrar_pago_det_result = PagosModel.registrar_pago_detalle(idPagoSQL,facturas_data)
+                
+                # Convertimos valores obtenidos
+                rows_detalle = [dict(row._mapping) for row in registrar_pago_det_result.fetchall()] if registrar_pago_det_result else []
+                if not rows_detalle:
+                    LOG.info(f"Error: El SP sp_RegistrarPagosDetalle_SIC no retornó respuesta.")
+                    return api_response(STATUS_CODE_404, [],ERROR,ERROR_GUARDADO)                
+                
+                # Procesar el resultado del SP sp_RegistrarPagosDetalle_SIC
+                primer_elemento_sql = rows_detalle[0]
+                estadoSQL = primer_elemento_sql.get('estatus')
+                mensajeSQL = primer_elemento_sql.get('mensaje')
+                
+                # si SP falla se retorna su respuesta
+                if estadoSQL != STATUS_CODE_200:
+                    LOG.info(f"Error: {mensajeSQL} ")
+                    PagosService.limpiar_recursos(ruta_completa)
+                    return api_response(STATUS_CODE_400,{},ERROR,mensajeSQL)            
+            else:
+                LOG.info("Sin facturas: se omite registrar_pago_detalle.")
             
             # Commit a registros insertados
             ConnectionDb.alchemy_db.session.commit()
             monto_float = float(importe_monto)
-            #Enviamos correo de aviso
-            # Parametros para rendereizar en el template del correo
+
+            #  Enviamos correo de aviso Parametros para renderizar el correo
             datos_correo = {
                 "para": CORREOS_REGISTRO_DEPOSITO,
                 "asunto": ASUNTO_MAIL_PAGO_REGISTRO,
@@ -148,7 +160,6 @@ class PagosService:
                     "nombre_cuenta": NOMBRE_SISTEMA,
                     "nombre_empresa": NOMBRE_EMPRESA,
                     "logo_url": LOGO_URL,
-                    
                     "correo_soporte": CORREO_SOPORTE,
                     "direccion_empresa": DIRECCION_EMPRESA,
                     "ciudad_estado_cp": CIUDAD_EMRESA
@@ -328,7 +339,7 @@ class PagosService:
             LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
             raise UnexpectedError("Ocurrió un error inesperado - historial_pagos_factura")   
 
-    #Metodo auxiliar para hacer rollback en BD y eliminar archivos de forma segura.
+    # Metodo auxiliar para hacer rollback en BD y eliminar archivos de forma segura.
     @staticmethod
     def limpiar_recursos(ruta_completa):
         try:

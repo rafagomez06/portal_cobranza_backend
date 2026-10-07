@@ -73,7 +73,6 @@ class PagosModel(sql_connection.Model):
         # Quitar la ultima coma y espacio
         consulta_sql = consulta_sql[:-1]
 
-        # CORRECCIÓN AQUÍ: @TYPagosDetalle (coincide con el SP)
         sql_query += consulta_sql + """
             EXEC sp_RegistrarPagosDetalle_SIC
                 @IdPago = {idPago},

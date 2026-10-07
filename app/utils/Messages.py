@@ -27,6 +27,7 @@ CREDENCIALES_FALLIDAS = 'Credenciales Incorrectas, intenta de nuevo.'
 CORREO_ENVIADO = '¡Revisa tu correo electrónico!. Te hemos enviado las instrucciones.'
 MSJ_CORREO_EXISTE = 'Si el correo se encuentra registrado en nuestro sistema. Te enviaremos las instrucciones.'
 ERROR_GENERICO = 'Ocurrió un error.'
+ERROR_GUARDADO = 'Ocurrio un error en el guardado, Intente mas tarde.'
 LOGIN_SUCCESS = 'Login exitoso.'
 PASSWORD_SUCCESS = 'Contraseña actualizada correctamente.'
 PARAMS_INCOMPLETOS = 'Parámetros incompletos'
@@ -50,6 +51,7 @@ STATUS_CODE_500 = 500
 
 #Logo Para EMAIL
 LOGO_URL ='https://www.primos-cousins.com.mx/primos-cousins.com.mx/public/thumbs/section-image-3/2018-03/and-logo.png'
+
 TEMPLATE_URL_RESET_PASS ='emails_templates/reset_password.html'
 TEMPLATE_URL_PAGO_REGISTRO ='emails_templates/solicitud_pago.html'
 
