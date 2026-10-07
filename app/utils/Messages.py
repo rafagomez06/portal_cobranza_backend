@@ -25,6 +25,7 @@ DATA_EMPTY ='No se recibió información.'
 CREDENCIALES_FALLIDAS = 'Credenciales Incorrectas, intenta de nuevo.'
 
 CORREO_ENVIADO = '¡Revisa tu correo electrónico!. Te hemos enviado las instrucciones.'
+MSJ_CORREO_EXISTE = 'Si el correo se encuentra registrado en nuestro sistema. Te enviaremos las instrucciones.'
 ERROR_GENERICO = 'Ocurrió un error.'
 LOGIN_SUCCESS = 'Login exitoso.'
 PASSWORD_SUCCESS = 'Contraseña actualizada correctamente.'
@@ -49,10 +50,17 @@ STATUS_CODE_500 = 500
 
 #Logo Para EMAIL
 LOGO_URL ='https://www.primos-cousins.com.mx/primos-cousins.com.mx/public/thumbs/section-image-3/2018-03/and-logo.png'
-TEMPLATE_URL ='emails_templates/reset_password.html'
-ASUNTO_MAIL= 'Restablecer tu contraseña SIC'
+TEMPLATE_URL_RESET_PASS ='emails_templates/reset_password.html'
+TEMPLATE_URL_PAGO_REGISTRO ='emails_templates/solicitud_pago.html'
+
+ASUNTO_MAIL_RESET_PASS = 'Restablecer tu contraseña SIC'
+ASUNTO_MAIL_PAGO_REGISTRO = 'Nueva solicitud de depósito'
+
 NOMBRE_SISTEMA = 'Sistema Integral de Cobranza (SIC)'
 NOMBRE_EMPRESA = 'Primos & Cousins'
 CORREO_SOPORTE = 'sistemas@primos-cousins.com.mx'
 DIRECCION_EMPRESA = 'Prol. Álvaro Obregón sur 585-3, Jorge Almada'
 CIUDAD_EMRESA = 'Culiacán Rosales, Sin. 80200'
+
+
+CORREOS_REGISTRO_DEPOSITO='rgomez@primos-cousins.com.mx;'

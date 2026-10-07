@@ -201,7 +201,7 @@ class UsuariosService:
                 return api_response(STATUS_CODE_404, [],ERROR,"El SP sp_ValidarCorreoCliente_SIC no retornó respuesta.")
             
             # Procesar el resultado del SP
-            primer_elemento_sql = result[0]
+            primer_elemento_sql = rows_result[0]
             estadoSQL = primer_elemento_sql.get('estatus')
             mensajeSQL = primer_elemento_sql.get('mensaje')
 
@@ -240,7 +240,7 @@ class UsuariosService:
             # Retornamos 200 para seguridad, mensaje generico.
             if estatus_result != STATUS_CODE_200:
                 LOG.info(f"{mensaje_result}: {correo_cliente}")
-                return api_response(STATUS_CODE_200,{},RESET_PASS_FAILED,CORREO_ENVIADO)
+                return api_response(STATUS_CODE_200,{},RESET_PASS_FAILED,MSJ_CORREO_EXISTE)
 
             # Generamos JWT para el reinicio de contraseña con vigencia de 5 min
             # Puedes guardar claims adicionales si requieres verificar el propósito del token
@@ -259,8 +259,8 @@ class UsuariosService:
             # Parametros para rendereizar en el template del correo
             datos_correo = {
                 "para": correo_cliente,
-                "asunto": ASUNTO_MAIL,
-                "template_name": TEMPLATE_URL,
+                "asunto": ASUNTO_MAIL_RESET_PASS,
+                "template_name": TEMPLATE_URL_RESET_PASS,
                 "template_data": {
                     "nombre": correo_cliente,
                     "nombre_cuenta": NOMBRE_SISTEMA,
@@ -462,53 +462,4 @@ class UsuariosService:
             LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
             raise UnexpectedError("Ocurrió un error inesperado - actualizar_permiso_sic")           
 
-    @staticmethod
-    def listado_usuarios(data):
-        try:
-            LOG.info("## listado_usuarios ##")
-            listado_result = UsuariosModel.obtener_usuarios()
-
-            # Convertimos valores obtenidos
-            columns = listado_result.keys()
-            rows = listado_result.fetchall()
-
-            # Validamos resultado
-            if columns is None or len(rows) == 0:
-                LOG.info(f"GET /listado-usuarios")
-                return api_response(STATUS_CODE_404, [],ERROR,ERROR_EMPTY)
-
-            df_result = pd.DataFrame(rows, columns=columns)
-            total_registros = len(df_result) 
-
-            # Limpiar t_body antes de asignar nuevos valores
-            t_body = []
-
-            # Convertimos las filas de datos en una lista de diccionarios
-            t_body = df_result.to_dict(orient="records")
-            msj = f"{total_registros} Empleado(s) encontrado(s)"
-            
-            return api_response(STATUS_CODE_200,t_body,SUCCESS,msj)
-
-        except Exception as e:
-                LOG.error(f"Error generando PDF: {e}")
-                return api_response(
-                    STATUS_CODE_500,
-                    [],
-                    ERROR,
-                    "Error al generar el PDF"
-                ), 500
-        except exc.StatementError as sta_err:
-            error_trace = traceback.format_exc()
-            LOG.error(
-                f"Err al realizar la sentencia en obtener_bitacora_checadas_detalle:{str(sta_err)} [{error_trace}]")
-            raise DatabaseError("Err al realizar la sentencia SQL")
-        except exc.SQLAlchemyError as e: 
-            LOG.error(f"DB error en obtener_bitacora_checadas_detalle: {str(e)}")
-            raise DatabaseError("Error al consultar la base de datos - obtener_bitacora_checadas_detalle")
-        except ValueError as e: 
-            LOG.warning(f"Parámetro inválido: {str(e)}")
-            raise UnexpectedError("Parámetros de búsqueda inválidos - obtener_bitacora_checadas_detalle")
-        except Exception as e:  
-            error_trace = traceback.format_exc()
-            LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
-            raise UnexpectedError("Ocurrió un error inesperado - obtener_bitacora_checadas_detalle")        
+    

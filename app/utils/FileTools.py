@@ -65,18 +65,18 @@ class FileTools:
     @staticmethod
     def generar_nombre_personalizado(nombre_original,cod_cliente,rfc):
         """
-        Genera un nombre único con codigo y rfc de cliente para evitar colisiones agregando timestamp.
-        Ejemplo: 'DI456_BAC800208B25_20261001095739892.pdf'
+        Genera un nombre único con codigo y rfc de cliente para evitar colisiones agregando timestamp y uuid.
+        Ejemplo: 'DI456_BAC800208B25_20261003130506_8f5ef079.pdf'
         """
         # Genera tiempo con milisegundos
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         # Obtiene extension de archivo
-        ext = nombre_original.rsplit('.', 1)[1].lower() if '.' in nombre_original else 'jpg'
-        #hex_limpio = uuid.uuid4().hex
-        #primeros_12 = hex_limpio[:12]
+        extension = nombre_original.rsplit('.', 1)[1].lower() if '.' in nombre_original else 'jpg'
+        hexa_limpio = uuid.uuid4().hex
+        hexa_corto = hexa_limpio[:8]
         
-        # Armado de nombre
-        nombre_archivo_actualizado = f"{cod_cliente}_{rfc}_{timestamp}.{ext}"
+        # Armado de nombre del archivo
+        nombre_archivo_actualizado = f"{cod_cliente}_{rfc}_{timestamp}_{hexa_corto}.{extension}"
 
         return nombre_archivo_actualizado
 
@@ -148,7 +148,6 @@ class FileTools:
         # Crea la carpeta si no existe
         if ruta_destino and not os.path.exists(ruta_destino):
             os.makedirs(ruta_destino, exist_ok=True)
-
 
         nombre_archivo_unico  = FileTools.generar_nombre_personalizado(archivo.filename,cod_cliente,rfc)
         ruta_completa = os.path.join(ruta_destino, nombre_archivo_unico)

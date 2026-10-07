@@ -17,5 +17,5 @@ CorreoController  = Blueprint("correo", __name__)
 #@jwt_required()
 def enviar_correo():
     data = request.get_json(force=True)
-    return CorreoService.enviar_correo(data)
+    return True #CorreoService.enviar_correo(data)
 

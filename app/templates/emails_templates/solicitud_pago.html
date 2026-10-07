@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Restablecer contraseña</title>
+    <title>Solicitud de Depósito</title>
 
     <style type="text/css">
       body,
@@ -54,14 +54,17 @@
           width: 100% !important;
           margin: auto !important;
         }
-        .fluid {
-          max-width: 100% !important;
-          height: auto !important;
-          margin-left: auto !important;
-          margin-right: auto !important;
-        }
         .content-padding {
           padding: 24px !important;
+        }
+        .data-label {
+          width: 100% !important;
+          display: block !important;
+          padding-bottom: 2px !important;
+        }
+        .data-value {
+          width: 100% !important;
+          display: block !important;
         }
       }
     </style>
@@ -114,7 +117,7 @@
               padding: 40px;
               text-align: left;
               color: #51545e;
-              font-size: 16px;
+              font-size: 15px;
               line-height: 1.6;
             "
           >
@@ -127,7 +130,7 @@
               width="100%"
             >
               <tr>
-                <td style="text-align: center; padding-bottom: 30px">
+                <td style="text-align: center; padding-bottom: 24px">
                   <div
                     style="
                       display: inline-flex;
@@ -143,7 +146,6 @@
                       style="display: block; border: 0"
                     />
                     {% else %}
-                    <!-- Logo por defecto con ícono similar a la imagen -->
                     <span
                       style="
                         font-size: 20px;
@@ -152,8 +154,7 @@
                         letter-spacing: -0.5px;
                       "
                     >
-                      <span style="color: #0066ff; margin-right: 4px"></span> {{
-                      nombre_empresa | default('Primos & Cousins') }}
+                      {{ nombre_empresa | default('Primos & Cousins') }}
                     </span>
                     {% endif %}
                   </div>
@@ -161,46 +162,174 @@
               </tr>
             </table>
 
-            <!-- Saludo -->
+            <!-- Título Principal -->
             <h1
               style="
-                margin: 0 0 20px 0;
-                font-size: 22px;
-                font-weight: bold;
+                margin: 0 0 16px 0;
+                font-size: 20px;
+                font-weight: 700;
                 color: #0f172a;
                 line-height: 1.3;
               "
             >
-              Hola, buen día.
+              Nueva solicitud de depósito
             </h1>
 
-            <!-- Mensaje principal -->
             <p
               style="
-                margin: 0 0 30px 0;
+                margin: 0 0 24px 0;
                 color: #51545e;
                 font-size: 15px;
                 line-height: 1.6;
               "
             >
-              Recientemente se ha realizado una solicitud para restablecer la
-              contraseña de su cuenta en el
-              <strong>{{ nombre_cuenta }}</strong>.<br /><br />
-              Haga clic en el siguiente botón para restablecer la contraseña.
-              <strong
-                >Por motivos de seguridad, este enlace solo será válido durante
-                los próximos 5 minutos.</strong
-              >
+              Hola, buen día.<br />
+              Se ha registrado recientemente una nueva solicitud de depósito con
+              los siguientes detalles:
             </p>
-            <br />
-            <!-- Botón CTA -->
+
+            <!-- Tarjeta con Resumen de Datos del Cliente -->
             <table
               role="presentation"
               cellspacing="0"
               cellpadding="0"
               border="0"
               width="100%"
-              style="margin-bottom: 30px"
+              style="
+                background-color: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                margin-bottom: 24px;
+              "
+            >
+              <tr>
+                <td style="padding: 16px 20px">
+                  <table
+                    role="presentation"
+                    cellspacing="0"
+                    cellpadding="0"
+                    border="0"
+                    width="100%"
+                  >
+                    <tr>
+                      <td
+                        class="data-label"
+                        style="
+                          padding: 6px 0;
+                          color: #64748b;
+                          font-size: 14px;
+                          font-weight: 600;
+                          width: 140px;
+                        "
+                      >
+                        Cliente:
+                      </td>
+                      <td
+                        class="data-value"
+                        style="
+                          padding: 6px 0;
+                          color: #0f172a;
+                          font-size: 14px;
+                          font-weight: 600;
+                        "
+                      >
+                        {{ cod_cliente }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        class="data-label"
+                        style="
+                          padding: 6px 0;
+                          color: #64748b;
+                          font-size: 14px;
+                          font-weight: 600;
+                          width: 140px;
+                        "
+                      >
+                        RFC:
+                      </td>
+                      <td
+                        class="data-value"
+                        style="
+                          padding: 6px 0;
+                          color: #0f172a;
+                          font-size: 14px;
+                          font-weight: 600;
+                        "
+                      >
+                        {{ rfc_cliente }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        class="data-label"
+                        style="
+                          padding: 6px 0;
+                          color: #64748b;
+                          font-size: 14px;
+                          font-weight: 600;
+                          width: 140px;
+                        "
+                      >
+                        Importe:
+                      </td>
+                      <td
+                        class="data-value"
+                        style="
+                          padding: 6px 0;
+                          color: #0f172a;
+                          font-size: 14px;
+                          font-weight: 600;
+                        "
+                      >
+                        {{ importe_monto }}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Cuadro de Advertencia / Nota importante -->
+            <table
+              role="presentation"
+              cellspacing="0"
+              cellpadding="0"
+              border="0"
+              width="100%"
+              style="
+                background-color: #eff6ff;
+                border-left: 4px solid #0066ff;
+                border-radius: 0 6px 6px 0;
+                margin-bottom: 28px;
+              "
+            >
+              <tr>
+                <td
+                  style="
+                    padding: 14px 16px;
+                    color: #1e40af;
+                    font-size: 14px;
+                    line-height: 1.5;
+                  "
+                >
+                  <strong>Nota:</strong> Favor de revisar en el sistema el
+                  comprobante de pago correspondiente para proceder con su
+                  validación.
+                </td>
+              </tr>
+            </table>
+
+            <!-- Botón CTA (Opcional - Quitar comentarios si se requiere) -->
+            {% if action_url %}
+            <table
+              role="presentation"
+              cellspacing="0"
+              cellpadding="0"
+              border="0"
+              width="100%"
+              style="margin-bottom: 28px"
             >
               <tr>
                 <td align="center">
@@ -233,7 +362,7 @@
                             display: inline-block;
                           "
                         >
-                          Restablecer contraseña
+                          Ver en el Sistema
                         </a>
                       </td>
                     </tr>
@@ -241,35 +370,22 @@
                 </td>
               </tr>
             </table>
-            <br /><br />
-            <!-- Texto de soporte -->
-            <p
-              style="
-                margin: 0 0 20px 0;
-                color: #51545e;
-                font-size: 15px;
-                line-height: 1.6;
-              "
-            >
-              <strong>Nota:</strong> Si usted no solicitó este cambio, puede
-              ignorar este correo de forma segura. Su contraseña no será
-              modificada hasta que complete el proceso de restablecimiento.
-              <br /><br />
-              Para dudas o aclaraciones puede contactarnos en:<br />
-              [ {{correo_soporte }} ]
-              <br />
-            </p>
+            {% endif %}
 
             <!-- Cierre -->
             <p
               style="
-                margin: 0 0 30px 0;
+                margin: 0;
                 color: #51545e;
                 font-size: 15px;
                 line-height: 1.6;
               "
             >
-              Saludos Cordiales.<br />
+              <br /><br />
+              Saludos cordiales,<br />
+              <strong
+                >{{ nombre_empresa | default('Primos & Cousins') }}</strong
+              >
             </p>
 
             <!-- Divisor -->
@@ -277,7 +393,7 @@
               style="
                 border: none;
                 border-top: 1px solid #eaeaec;
-                margin: 30px 0;
+                margin: 30px 0 0 0;
               "
             />
           </td>

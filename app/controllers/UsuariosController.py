@@ -37,10 +37,3 @@ def actualizar_password_token():
 def actualizar_permiso_sic():
     data = request.get_json()
     return UsuariosService.actualizar_permiso_sic(data)
-
-@UsuariosController.route("/listado-usuarios", methods=["GET"])
-@jwt_required()
-@limiter.limit("10 per minute")
-def listado_usuarios():
-    data = request.args.to_dict()
-    return UsuariosService.listado_usuarios(data)

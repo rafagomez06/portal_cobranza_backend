@@ -38,3 +38,9 @@ def listado_facturas():
     data = request.args.to_dict()
     return PagosService.listado_facturas(data)
 
+@PagosController.route("/historial-pagos-factura", methods=["GET"])
+@jwt_required()
+def historial_pagos_factura():
+    data = request.args.to_dict()
+    return PagosService.historial_pagos_factura(data)
+

@@ -1,5 +1,5 @@
 import json
-
+from app.services.CorreoService import CorreoService
 from app.models.PagosModel import PagosModel
 from app.utils.FormateoData import formato_moneda,_trim
 from app.utils.response import api_response
@@ -51,6 +51,7 @@ class PagosService:
                 {
                     'orden': item.get('orden'),
                     'factura': item.get('factura'),
+                    'fecha': item.get('fecha'),
                     'tipo_moneda': item.get('tipo_moneda'),
                     'importe_factura': float(item.get('importe_factura', 0)),  
                     'importe_abonado': float(item.get('importe_abonado', 0)),
@@ -115,7 +116,6 @@ class PagosService:
 
             # Guardamos en tabla de detalle 
             registrar_pago_det_result = PagosModel.registrar_pago_detalle(idPagoSQL,facturas_data)
-            
             # Convertimos valores obtenidos
             rows_detalle = [dict(row._mapping) for row in registrar_pago_det_result.fetchall()] if registrar_pago_det_result else []
             if not rows_detalle:
@@ -134,6 +134,28 @@ class PagosService:
             
             # Commit a registros insertados
             ConnectionDb.alchemy_db.session.commit()
+            monto_float = float(importe_monto)
+            #Enviamos correo de aviso
+            # Parametros para rendereizar en el template del correo
+            datos_correo = {
+                "para": CORREOS_REGISTRO_DEPOSITO,
+                "asunto": ASUNTO_MAIL_PAGO_REGISTRO,
+                "template_name": TEMPLATE_URL_PAGO_REGISTRO,
+                "template_data": {
+                    "rfc_cliente": rfc_cliente,
+                    "cod_cliente":cod_cliente,
+                    "importe_monto": f"${monto_float:,.2f}",
+                    "nombre_cuenta": NOMBRE_SISTEMA,
+                    "nombre_empresa": NOMBRE_EMPRESA,
+                    "logo_url": LOGO_URL,
+                    
+                    "correo_soporte": CORREO_SOPORTE,
+                    "direccion_empresa": DIRECCION_EMPRESA,
+                    "ciudad_estado_cp": CIUDAD_EMRESA
+                }
+            }
+            #Envio de correo para reinicio de contraseña
+            CorreoService.enviar_correo(datos_correo)
 
             return api_response(STATUS_CODE_200,id_generado,SUCCESS,mensajeSQL)
         
@@ -242,6 +264,69 @@ class PagosService:
             error_trace = traceback.format_exc()
             LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
             raise UnexpectedError("Ocurrió un error inesperado - listado_facturas")   
+    
+    @staticmethod
+    def historial_pagos_factura(data):
+        try:
+            LOG.info("## historial_pagos_factura ##")
+            cod_cliente = data["cod_cliente"].strip()
+            factura = data["factura"].strip()
+
+            # Busca el codigo del cliente primero
+            listado_result = PagosModel.historial_pagos_factura(cod_cliente,factura)
+            # Convertimos valores obtenidos
+            columns = listado_result.keys()
+            rows = listado_result.fetchall()
+            
+            # Validamos resultado
+            if columns is None or len(rows) == 0:
+                LOG.info(f"GET /historial-pagos-factura")
+                return api_response(STATUS_CODE_404, [],ERROR,ERROR_EMPTY)
+            
+            # Resultados
+            df_result = pd.DataFrame(rows, columns=columns)
+
+            # Obtenemos registros de fechas para formatear como 'YYYY-MM-DD'
+            df_result["fecha_abono"] = pd.to_datetime(df_result["fecha_abono"])
+            df_result["importe_abonar"] = df_result["importe_abonar"].apply(formato_moneda)
+
+            # Formateo fechas
+            df_result["fecha_abono"] = df_result["fecha_abono"].dt.strftime("%Y-%m-%d %I:%M %p")
+
+
+            total_registros = len(df_result) 
+            # Limpiar variables antes de asignar nuevos valores
+            t_body = []
+            t_head = []
+
+            t_head = [
+                {"dataIndex": col, "key": col, "title": col.replace("_", " ").capitalize()}
+                for col in columns
+            ]
+            # Convertimos las filas de datos en una lista de diccionarios
+            t_body = df_result.to_dict(orient="records")
+            msj = f"{total_registros} Comprobante(s) encontrada(s)"
+
+            # resultado
+            data = {
+                "t_header":t_head,
+                "t_body":t_body,
+            }
+            return api_response(STATUS_CODE_200,data,SUCCESS,msj)
+        
+        except exc.StatementError as sta_err:
+                LOG.error(f"Err al realizar la sentencia en historial_pagos_factura: {str(sta_err)} [{traceback.format_exc()}]")
+                raise DatabaseError("Err al realizar la sentencia SQL")
+        except exc.SQLAlchemyError as e:
+            LOG.error(f"DB error en historial_pagos_factura: {str(e)} [{traceback.format_exc()}]")
+            raise DatabaseError("Error al consultar la base de datos - historial_pagos_factura")
+        except ValueError as e:
+            LOG.warning(f"Parámetro inválido: {str(e)}")
+            raise UnexpectedError("Parámetros de búsqueda inválidos")
+        except Exception as e:
+            error_trace = traceback.format_exc()
+            LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
+            raise UnexpectedError("Ocurrió un error inesperado - historial_pagos_factura")   
 
     #Metodo auxiliar para hacer rollback en BD y eliminar archivos de forma segura.
     @staticmethod

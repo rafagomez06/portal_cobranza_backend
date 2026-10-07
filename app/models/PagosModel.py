@@ -23,6 +23,13 @@ class PagosModel(sql_connection.Model):
         LOG.info(f"## Consulta: {sql}")
         result = sql_connection.session.execute(sql)
         return result
+    
+    @staticmethod
+    def historial_pagos_factura(cod_cliente,factura):
+        sql = text(f"EXEC sp_ObtenerHistorialPagosFacturasCliente_SIC @CodCliente='{cod_cliente}',@Factura='{factura}';")
+        LOG.info(f"## Consulta: {sql}")
+        result = sql_connection.session.execute(sql)
+        return result
 
     @staticmethod
     def registrar_pago(cod_empresa,cod_cliente,rfc_cliente,moneda ,importe_monto,importe_disponible,importe_abonado):
@@ -49,10 +56,11 @@ class PagosModel(sql_connection.Model):
 
         # Armado de consulta como texto
         sql_query = """
+            SET DATEFORMAT ymd;
             DECLARE @TY_PagosDetalle TYSIC_PagosDetalle;
             SET NOCOUNT ON
             -- Insertar los datos en la tabla temporal
-            INSERT INTO @TY_PagosDetalle(orden, factura, importe_factura, importe_abonado, importe_abonar, saldo_pendiente)
+            INSERT INTO @TY_PagosDetalle(orden, factura, fecha, importe_factura, importe_abonado, importe_abonar, saldo_pendiente)
             VALUES
             """
         # Concatena los valores a la consulta SQL
@@ -60,7 +68,7 @@ class PagosModel(sql_connection.Model):
 
         for item in facturas_data:
             # Escapar adecuadamente los valores
-            consulta_sql += f"({item['orden']},'{item['factura']}',{item['importe_factura']},{item['importe_abonado']},{item['importe_abonar']},{item['saldo_pendiente']}),"
+            consulta_sql += f"({item['orden']},'{item['factura']}','{item['fecha']}',{item['importe_factura']},{item['importe_abonado']},{item['importe_abonar']},{item['saldo_pendiente']}),"
         
         # Quitar la ultima coma y espacio
         consulta_sql = consulta_sql[:-1]
