@@ -44,3 +44,9 @@ def historial_pagos_factura():
     data = request.args.to_dict()
     return PagosService.historial_pagos_factura(data)
 
+@PagosController.route("/historial-notas-credito", methods=["GET"])
+@jwt_required()
+def historial_notas_credito():
+    data = request.args.to_dict()
+    return PagosService.historial_notas_credito(data)
+

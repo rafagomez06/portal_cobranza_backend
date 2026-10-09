@@ -30,12 +30,19 @@ class PagosModel(sql_connection.Model):
         LOG.info(f"## Consulta: {sql}")
         result = sql_connection.session.execute(sql)
         return result
+    
+    @staticmethod
+    def historial_notas_credito(cod_cliente,factura):
+        sql = text(f"EXEC sp_ObtenerHistorialNotasCreditoCliente_SIC @CodCliente='{cod_cliente}',@Factura='{factura}';")
+        LOG.info(f"## Consulta: {sql}")
+        result = sql_connection.session.execute(sql)
+        return result
 
     @staticmethod
-    def registrar_pago(cod_empresa,cod_cliente,rfc_cliente,moneda ,importe_monto,importe_disponible,importe_abonado):
+    def registrar_pago(cod_empresa,cod_cliente,rfc_cliente,moneda ,importe_monto,importe_disponible,importe_abonado,facturas_aplicar):
         sql = text(f"EXEC sp_RegistrarPagos_SIC @CodEmpresa={cod_empresa},@CodCliente={cod_cliente},"
                 f"@RfcCliente='{rfc_cliente}',@Moneda='{moneda}',@ImporteMonto='{importe_monto}',"
-                f"@ImporteDisponible='{importe_disponible}',@ImporteAbonado='{importe_abonado}';")
+                f"@ImporteDisponible='{importe_disponible}',@ImporteAbonado='{importe_abonado}',@TieneFacturas={facturas_aplicar};")
         LOG.info(f"## Consulta: {sql}")
         result = sql_connection.session.execute(sql)
         return result

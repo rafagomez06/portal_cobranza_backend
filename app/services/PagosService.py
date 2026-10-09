@@ -61,8 +61,10 @@ class PagosService:
                     for item in facturas
                 ]                
                 tieneFacturas = True
+                facturas_aplicar = 1
             else:
                 tieneFacturas = False
+                facturas_aplicar = 0
                 facturas_data = []
                 LOG.info("Facturas: no recibe facturas de Payload.")
             
@@ -80,7 +82,7 @@ class PagosService:
 
             # Envio de datos a BD Registrar en tabla Cabecero
             registrar_pago_result = PagosModel.registrar_pago(cod_empresa,cod_cliente,rfc_cliente,moneda
-                                                            ,importe_monto,importe_disponible,importe_abonado)
+                                                            ,importe_monto,importe_disponible,importe_abonado,facturas_aplicar)
             # Convertimos valores obtenidos
             rows_pago = [dict(row._mapping) for row in registrar_pago_result.fetchall()] if registrar_pago_result else []
             if not rows_pago:
@@ -338,6 +340,66 @@ class PagosService:
             error_trace = traceback.format_exc()
             LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
             raise UnexpectedError("Ocurrió un error inesperado - historial_pagos_factura")   
+    
+    @staticmethod
+    def historial_notas_credito(data):
+        try:
+            LOG.info("## historial_notas_credito ##")
+            cod_cliente = data["cod_cliente"].strip()
+            factura = data["factura"].strip()
+
+            # Busca el codigo del cliente primero
+            listado_result = PagosModel.historial_notas_credito(cod_cliente,factura)
+            # Convertimos valores obtenidos
+            columns = listado_result.keys()
+            rows = listado_result.fetchall()
+            
+            # Validamos resultado
+            if columns is None or len(rows) == 0:
+                LOG.info(f"GET /historial-notas-credito")
+                return api_response(STATUS_CODE_404, [],ERROR,ERROR_EMPTY)
+            
+            # Resultados
+            df_result = pd.DataFrame(rows, columns=columns)
+            # Obtenemos registros de fechas para formatear como 'YYYY-MM-DD' y Moneda
+            df_result["fecha_aplicado"] = pd.to_datetime(df_result["fecha_aplicado"])
+            df_result["importe"] = df_result["importe"].apply(formato_moneda)
+            # Formateo fechas
+            df_result["fecha_aplicado"] = df_result["fecha_aplicado"].dt.strftime("%Y-%m-%d %I:%M %p")
+
+            total_registros = len(df_result) 
+            # Limpiar variables antes de asignar nuevos valores
+            t_body = []
+            t_head = []
+
+            t_head = [
+                {"dataIndex": col, "key": col, "title": col.replace("_", " ").capitalize()}
+                for col in columns
+            ]
+            # Convertimos las filas de datos en una lista de diccionarios
+            t_body = df_result.to_dict(orient="records")
+            msj = f"{total_registros} Nota(s) Credito encontrada(s)"
+
+            # resultado
+            data = {
+                "t_header":t_head,
+                "t_body":t_body,
+            }
+            return api_response(STATUS_CODE_200,data,SUCCESS,msj)
+        
+        except exc.StatementError as sta_err:
+                LOG.error(f"Err al realizar la sentencia en historial_notas_credito: {str(sta_err)} [{traceback.format_exc()}]")
+                raise DatabaseError("Err al realizar la sentencia SQL")
+        except exc.SQLAlchemyError as e:
+            LOG.error(f"DB error en historial_notas_credito: {str(e)} [{traceback.format_exc()}]")
+            raise DatabaseError("Error al consultar la base de datos - historial_notas_credito")
+        except ValueError as e:
+            LOG.warning(f"Parámetro inválido: {str(e)}")
+            raise UnexpectedError("Parámetros de búsqueda inválidos")
+        except Exception as e:
+            error_trace = traceback.format_exc()
+            LOG.error(f"Error inesperado: {str(e)} | Trace: {error_trace}")
+            raise UnexpectedError("Ocurrió un error inesperado - historial_notas_credito")   
 
     # Metodo auxiliar para hacer rollback en BD y eliminar archivos de forma segura.
     @staticmethod
