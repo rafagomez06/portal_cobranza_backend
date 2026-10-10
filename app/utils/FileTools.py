@@ -4,14 +4,11 @@ from PIL import Image
 from dotenv import load_dotenv
 from app.utils.Logger import logger
 from datetime import datetime
-
-
+load_dotenv() 
 LOG = logger()
 
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'pdf'}
 MAX_IMAGE_SIZE     = (1200, 1200)   # píxeles máximos al redimensionar
-
-
 class FileTools:
     @staticmethod
     def existe_archivo(ruta: str, nombre: str) -> bool:
@@ -165,3 +162,36 @@ class FileTools:
             }
 
         return info_archivo
+    
+    @staticmethod
+    def obtener_ruta_factura(factura):
+        # Carpeta Cliente
+        cod_factura = factura.upper()
+        
+        # Obtenemos la ruta de variable de entorno
+        server_facturas = os.getenv("IP_SERVER_FACTURAS")
+        carpeta_facturas = os.getenv("CARPETA_FACTURAS")
+        nomenclatura_pdf = os.getenv("NOMECLATURA_PDF")
+
+        # Armado de nombre del archivo
+        nombre_archivo_pdf = f"{nomenclatura_pdf}{cod_factura}.pdf"
+
+        # Armado de ruta
+        ruta_completa_factura = os.path.join(f"{server_facturas}{carpeta_facturas}", nombre_archivo_pdf)
+        ruta_factura =os.path.join(f"{server_facturas}{carpeta_facturas}")
+
+        # Valida si no existe la ruta con el archivo
+        if not os.path.exists(ruta_completa_factura):
+            archivo_encontrado = False
+            LOG.info(f"No se encontró factura: {nombre_archivo_pdf}")
+        else:
+            archivo_encontrado = True
+            LOG.info(f"Factura Solicitada: {nombre_archivo_pdf}")
+
+        info_factura = {
+            "archivo_encontrado": archivo_encontrado,
+            "ruta_factura": ruta_factura,
+            "nombre_archivo":nombre_archivo_pdf
+            }
+
+        return info_factura

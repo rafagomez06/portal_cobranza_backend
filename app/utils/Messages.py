@@ -28,6 +28,7 @@ CORREO_ENVIADO = '¡Revisa tu correo electrónico!. Te hemos enviado las instruc
 MSJ_CORREO_EXISTE = 'Si el correo se encuentra registrado en nuestro sistema. Te enviaremos las instrucciones.'
 ERROR_GENERICO = 'Ocurrió un error.'
 ERROR_GUARDADO = 'Ocurrio un error en el guardado, Intente mas tarde.'
+SIN_FACTURA = 'No se encontro la factura, Intente mas tarde.'
 LOGIN_SUCCESS = 'Login exitoso.'
 PASSWORD_SUCCESS = 'Contraseña actualizada correctamente.'
 PARAMS_INCOMPLETOS = 'Parámetros incompletos'

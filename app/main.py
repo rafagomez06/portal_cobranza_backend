@@ -64,20 +64,17 @@ def create_app(env: str = "default") -> Flask:
 
     CORS(
         app,
-        resources={
-            r"/api/v1/sic/*": {
-                "origins": [
-                    "http://localhost:5173",
-                    "http://127.0.0.1:5173",
-                ],
-                "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-                "allow_headers": ["Content-Type", "Authorization"],
-                "expose_headers": ["Content-Type"],
-                "supports_credentials": True,
-                "max_age": 3600,
-            }
-        },
+        origins=[
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+        ],
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
+        expose_headers=["Content-Type"],
+        supports_credentials=True,
+        max_age=3600,
     )
+    
     URL_PREFIX = '/api/v1/sic' # Sistema Integral Cobranza
 
     # Registrar Rutas de entrada 
@@ -85,12 +82,14 @@ def create_app(env: str = "default") -> Flask:
     from app.controllers.UsuariosController import UsuariosController
     from app.controllers.PagosController import PagosController
     from app.controllers.CorreoController import CorreoController
+    from app.controllers.ArchivosController import ArchivosController
 
     # Rutas Endpoints
     app.register_blueprint(UsuariosController, url_prefix=f"{URL_PREFIX}/auth")
     app.register_blueprint(CatalogosController, url_prefix=f"{URL_PREFIX}/catalogo")
     app.register_blueprint(PagosController, url_prefix=f"{URL_PREFIX}/pago")
     app.register_blueprint(CorreoController, url_prefix=f"{URL_PREFIX}/correo")
+    app.register_blueprint(ArchivosController, url_prefix=f"{URL_PREFIX}/archivo")
 
     # Manejadores de errores globales 
     _register_error_handlers(app)
